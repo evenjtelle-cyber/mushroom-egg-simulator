@@ -192,10 +192,10 @@ ACTION_PREFIXES = (
 def purge_previous_build():
     old_scene = bpy.data.scenes.get(SCENE_NAME)
     if old_scene is not None:
+        # Empty the scene but keep it: deleting the scene you're looking at
+        # (it's active after a previous run) crashes Blender.
         for obj in list(old_scene.collection.all_objects):
             bpy.data.objects.remove(obj, do_unlink=True)
-        if len(bpy.data.scenes) > 1:
-            bpy.data.scenes.remove(old_scene)
     # Objects orphaned by earlier runs keep their names and would make ours ".001".
     for obj in list(bpy.data.objects):
         if obj.users_scene == () and obj.name.startswith((RIG_NAME, PROXY_NAME)):
@@ -225,7 +225,7 @@ def make_scene():
     if coll.name not in scene.collection.children:
         scene.collection.children.link(coll)
 
-    if bpy.context.window is not None:
+    if bpy.context.window is not None and not bpy.app.background and bpy.context.window.scene != scene:
         bpy.context.window.scene = scene
     return scene, coll
 
@@ -982,8 +982,8 @@ def reset_pose(rig):
 def export_fbx(scene, rig, filepath, all_actions):
     view_layer = scene.view_layers[0]
     for obj in view_layer.objects:
-        obj.select_set(False)
-    rig.select_set(True)
+        obj.select_set(False, view_layer=view_layer)
+    rig.select_set(True, view_layer=view_layer)
     view_layer.objects.active = rig
 
     with scene_override(scene, active=rig, selected=[rig]):

@@ -2,7 +2,8 @@
 GenerateFrostmaneSet.py  -  Blender 4.x
 "+1 Chop Mushrooms for Eggs": end-game Celestial set, blocky stud style
 
-Builds three things, each in its own scene and collection:
+Builds three things, each in its own collection of one scene, "FrostmaneSet"
+(one scene per asset crashed Blender 4.2's glTF exporter):
 
   FrostmaneWyrm   Secret Celestial dragon (~19 studs tall, ~33 long). Its
                   mammoth traits are layered shaggy fur slabs in white/ice/blue/navy
@@ -60,7 +61,7 @@ BUILD_MONSTER = True
 BUILD_EGG = True
 BUILD_VFX = True
 RENDER_PREVIEWS = True
-PREVIEW_SAMPLES = 48
+PREVIEW_SAMPLES = 24  # Blender looks frozen ("Not Responding") while previews render; that's normal
 FACE_POSITIVE_Y = False  # rotate exports 180 degrees if Studio shows them backwards
 SEED = 7
 
@@ -313,19 +314,13 @@ def lerp(a, b, t):
 # ---------------------------------------------------------------------------
 # Scene / material helpers
 # ---------------------------------------------------------------------------
-def purge_scene(name):
-    scene = bpy.data.scenes.get(name)
-    if scene is not None:
-        for obj in list(scene.collection.all_objects):
-            bpy.data.objects.remove(obj, do_unlink=True)
-        for child in list(scene.collection.children_recursive):
-            bpy.data.collections.remove(child)
-        if len(bpy.data.scenes) > 1:
-            bpy.data.scenes.remove(scene)
-    for coll in list(bpy.data.collections):
-        if coll.name.startswith(name) and coll.users == 0:
-            bpy.data.collections.remove(coll)
-    for block in (bpy.data.meshes, bpy.data.materials, bpy.data.cameras, bpy.data.lights):
+# Scenes made by earlier versions of this script (one per asset). They are
+# cleaned up, because exporting from several scenes is what crashed Blender.
+LEGACY_SCENES = ("FrostmaneWyrm", "FrostmaneEgg", "FrostmaneVFX", "FrostmaneSet_Flipbook")
+
+
+def purge_orphans():
+    for block in (bpy.data.meshes, bpy.data.materials, bpy.data.cameras, bpy.data.lights, bpy.data.worlds):
         for item in list(block):
             if item.users == 0:
                 block.remove(item)
@@ -339,23 +334,48 @@ def purge_collection(name):
         bpy.data.collections.remove(coll)
 
 
-def make_scene(name):
-    """Own scene + collection per asset (brief 6.1). Headless (--background)
-    runs build every asset as a collection in the window's scene instead:
-    there, Blender 4.2's glTF exporter crashes once it has switched the stub
-    window between scenes. Other assets' collections are hidden from renders."""
+def work_scene():
+    """The one scene the whole set is built in, with one collection per asset.
+
+    A single scene is deliberate. Blender 4.2's glTF exporter switches the
+    window to the scene it exports and can crash Blender once it has done that
+    for a second scene. The script also never deletes the scene you're looking
+    at, which crashes Blender too."""
     if bpy.app.background:
-        scene = bpy.context.scene
-        purge_collection(name + "_Parts")
-        coll = bpy.data.collections.new(name + "_Parts")
-        scene.collection.children.link(coll)
-        for child in scene.collection.children:
-            child.hide_render = child is not coll
-    else:
-        purge_scene(name)
-        scene = bpy.data.scenes.new(name)
-        coll = bpy.data.collections.new(name + "_Parts")
-        scene.collection.children.link(coll)
+        return bpy.context.scene  # the stub window can't switch scenes headless
+    scene = bpy.data.scenes.get(SET_NAME) or bpy.data.scenes.new(SET_NAME)
+    window = bpy.context.window
+    if window is not None and window.scene != scene:
+        window.scene = scene
+    shown = {w.scene for w in bpy.context.window_manager.windows}
+    for legacy in LEGACY_SCENES:
+        old = bpy.data.scenes.get(legacy)
+        if old is not None and old != scene and old not in shown:
+            for obj in list(old.collection.all_objects):
+                bpy.data.objects.remove(obj, do_unlink=True)
+            for child in list(old.collection.children_recursive):
+                bpy.data.collections.remove(child)
+            bpy.data.scenes.remove(old)
+    return scene
+
+
+def set_collection_visible(scene, coll, visible):
+    coll.hide_render = not visible
+    layer = scene.view_layers[0].layer_collection.children.get(coll.name)
+    if layer is not None:
+        layer.hide_viewport = not visible
+
+
+def make_scene(name):
+    """Fresh collection `<name>_Parts` in the work scene; every other asset's
+    collection is hidden so previews show one asset at a time."""
+    scene = work_scene()
+    purge_collection(name + "_Parts")
+    purge_orphans()
+    coll = bpy.data.collections.new(name + "_Parts")
+    scene.collection.children.link(coll)
+    for child in scene.collection.children:
+        set_collection_visible(scene, child, child is coll)
     scene.render.engine = "CYCLES"
     scene.cycles.device = "CPU"
     scene.view_settings.view_transform = "Standard"
@@ -1253,10 +1273,7 @@ def render_flipbook():
     path = save_rgba("FrostBreathFlipbook", atlas)
     log("Rendered 16-frame flipbook -> %s" % path)
 
-    if bpy.app.background:
-        purge_collection(coll.name)
-    else:
-        bpy.data.scenes.remove(scene)
+    purge_collection(coll.name)
     return path
 
 
@@ -1356,6 +1373,14 @@ def main():
         export_glb(scene, list(objects.values()), os.path.join(OUTPUT_DIR, "FrostmaneVFXMeshes.glb"))
         setup_preview(scene, coll, target=(0, 2.5, 1.0), distance=22, height=9, angle_deg=-25, ground=True, size=(900, 700))
         render_preview(scene, "FrostmaneVFXMeshes.png")
+
+    # Leave the dragon on screen; tick the eye icons in the Outliner to see the others.
+    scene = work_scene()
+    for child in scene.collection.children:
+        set_collection_visible(scene, child, child.name == "FrostmaneWyrm_Parts")
+    wyrm_cam = [o for o in scene.objects if o.type == "CAMERA" and o.name in bpy.data.collections.get("FrostmaneWyrm_Parts", scene.collection).objects]
+    if wyrm_cam:
+        scene.camera = wyrm_cam[0]
 
     with open(os.path.join(OUTPUT_DIR, SET_NAME + "_Manifest.json"), "w") as handle:
         json.dump(manifest, handle, indent=2)

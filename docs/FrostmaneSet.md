@@ -1,5 +1,7 @@
 # Frostmane set: end-game Secret dragon, egg and VFX
 
+New to Roblox Studio? Follow the step-by-step **[beginner guide](Guide_AddFrostmaneToRoblox.md)** instead.
+
 ![Frostmane Wyrm](images/FrostmaneWyrm_front.jpg)
 
 | | |
@@ -44,7 +46,7 @@ The generator writes everything to `~/Documents/FrostmaneSet/`:
 1. Stop any playtest first: changes made during Play are lost.
 2. Import the three GLBs with **Import 3D**. Put the VFX meshes model in `ReplicatedStorage.VFXMeshes` and keep its name, `FrostmaneVFXMeshes`.
 3. Upload the textures and paste their ids into `VFXLibrary`. Any texture that isn't uploaded yet just skips the effects that use it.
-4. In the command bar (Edit mode):
+4. In the command bar (Edit mode). If pasting several lines doesn't run, put them on one line separated by `;`:
    ```lua
    local FX = require(game.ReplicatedStorage.FrostmaneVFX)
    FX.Assemble(workspace.FrostmaneWyrm, "Wyrm")
@@ -70,4 +72,4 @@ If a model imports facing backwards, rotate its pivot 180°, or set `FACE_POSITI
 
 - `SurfaceAppearance.ColorMap` can only be set from Studio, so `Assemble` is a command-bar step. The runtime functions only create emitters, lights, highlights, tweens and GUI.
 - The coloured parts' preview materials use a texture mix that glTF can't carry. The GLBs get flat palette materials instead, and `Assemble` reapplies the real look.
-- Headless Blender 4.2 builds every asset as a collection in one scene: its glTF exporter crashes once it has switched the stub window between scenes. Running the script in the Blender UI gives one scene per asset, as the brief asks.
+- The generator builds everything in one Blender scene, `FrostmaneSet`, with one collection per asset (`FrostmaneWyrm_Parts`, `FrostmaneEgg_Parts`, `FrostmaneVFX_Parts`). One scene per asset crashed Blender 4.2's glTF exporter. Use the eye icons in the Outliner to switch between assets.

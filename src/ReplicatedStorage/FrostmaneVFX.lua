@@ -24,6 +24,7 @@
 	     local handle = FX.StartEgg(eggModel)       -- spin/bob, crown sparkles, crack pulse, label
 	     handle.Stop()
 	     FX.PlayHatch(eggModel, function(centre) spawnMonster(centre) end)
+	     FX.ResetEgg(eggModel)                      -- show the shell again after a hatch
 
 	Textures come from ReplicatedStorage.VFXLibrary. An emitter whose texture
 	is not uploaded yet is skipped (never a built-in Roblox texture).
@@ -794,6 +795,23 @@ function FrostmaneVFX.PlayHatch(model: Model, onReveal: ((Vector3) -> ())?)
 		task.spawn(onReveal, centre)
 	end
 	task.wait(0.9)
+end
+
+-- Undo PlayHatch's changes: show the shell again and reset the crack colour,
+-- so the same egg can be hatched again (e.g. after a re-roll or in a demo).
+function FrostmaneVFX.ResetEgg(model: Model)
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			local key = baseName(d)
+			if EGG_SHELL_PARTS[key] then
+				local look = LOOKS[key]
+				d.Transparency = look and look.Transparency or 0
+				if key == "Cracks" then
+					d.Color = Color3.fromHex(FrostmaneVFX.PALETTE.Cracks)
+				end
+			end
+		end
+	end
 end
 
 return FrostmaneVFX

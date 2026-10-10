@@ -1,0 +1,473 @@
+# MASTER BRIEF v2: "+1 Chop Mushrooms for Eggs" (Roblox)
+
+> Paste this whole document at the start of a new session. It replaces the first master brief.
+> **What changed from v1:**
+> - Every asset now uses one **blocky stud style**.
+> - The references are now the assets built in this repo:
+>   - Frostmane Wyrm, Frostmane Egg and the Frostmane VFX set;
+>   - the 4-hit weapon combo, the shoulder idle and the drag run.
+> - Sections 6–8 record the pipeline that was actually proven to work, including the Blender crash rules.
+
+---
+
+## 0. Your role
+Act as Executive Roblox Game Designer, Lead Systems Engineer, Technical Artist (Blender), Animator, VFX Artist and UI Designer for my Roblox simulator **"+1 Chop Mushrooms for Eggs"**. It's heavily inspired by the core loop, UI layout and map progression of "+1 Chop Trees for Treasure".
+
+**All visual assets are made in Blender**: models, textures, icons, UI art, animations, and all VFX textures, flipbooks and effect meshes. Roblox Studio is used to import them, assemble them, run the effects (ParticleEmitters, Beams, Trails, lights) and write the game code.
+- When you have Blender and Studio access, build things directly.
+- Otherwise, write Blender Python (`bpy`) generator scripts plus Luau scripts I can run.
+- Commit everything to the repo (layout in section 8).
+
+---
+
+## 1. Core gameplay & progression
+- **Core loop:** players chop giant mushrooms with axes and swords. Chopping gives **Strength** and drops **Eggs** on the floor, which players collect into their inventory.
+- **Map:** a linear corridor track like "+1 Chop Trees for Treasure" (sloped grass paths, brick borders, river bridges). Zones follow the egg tiers: **Wood → Crystal → Lava → Void → Celestial**. Further along means rarer eggs, stronger mushrooms and stronger monsters.
+- **Inventory:** base capacity is **3 Eggs**. When full, players can't pick up more until they place eggs in plot incubators or sell them.
+- **Hatching & plots:** players carry eggs to incubators on their private plot. Eggs hatch after a cooldown, or instantly for Robux.
+- **Monsters:** eggs hatch into 3D monsters by weighted luck rolls.
+  - Hatched monsters stay on the plot earning **passive Cash/sec**.
+  - One monster can be equipped to follow the player, giving Strength and Luck multipliers.
+- **Index discovery reward:** unlocking a new monster in the Index grants a one-time Cash reward scaled by rarity.
+- **Strength & levels:**
+  - Clicking gives +Strength and +XP.
+  - Better weapons from the physical "Choppers" shop raise Strength per click and mushroom damage.
+  - AFK training dummies give passive Strength: 1 free dummy at spawn, plus Cash-locked dummies deeper in the map.
+  - Auto-chopping mushrooms also gives passive Strength and XP.
+- **Level-up lightbeam:** on level-up, a skyward pillar of light (a Blender-made beam mesh plus Blender particle textures) crashes down on the player with camera shake and a particle burst.
+- **Rebirth / prestige:** resets Strength and Cash in exchange for permanent multipliers and Rare Aura Roll Tokens. Each rebirth needs a minimum level (Rebirth 1 = Level 50, Rebirth 2 = Level 120, Rebirth 3 = Level 250).
+
+### 1a. Mushroom health & 3 shrinking stages (required)
+Every mushroom has health and visibly shrinks as it's chopped:
+
+| Stage | Health range | Model scale | Notes |
+|---|---|---|---|
+| 3 – Full | 100% → above 2/3 | 1.00 | Spawn size |
+| 2 – Damaged | at or below 2/3 | 0.80 | Shrinks when crossing 2/3 |
+| 1 – Critical | at or below 1/3 | 0.60 | Shrinks when crossing 1/3 |
+| Broken | 0 | — | Break burst, then respawn |
+
+- **Server-authoritative health.**
+  - Model attributes: `MaxHealth`, `Health`, `Stage` (3/2/1), `RespawnTime`, `StrengthReward`, `EggDrop`.
+  - Damage comes from the player's equipped weapon (`Damage` attribute) multiplied by upgrades.
+- **Shrink transition:** when health crosses a threshold, tween the scale down with a squash-and-bounce, using Back/Elastic easing over ~0.35 s.
+  - Use `Model:ScaleTo()` driven by a NumberValue tween.
+  - Keep the base planted on the ground.
+  - Add a burst of Blender-made mushroom chunk debris in the cap's colors.
+- **Every hit:** a quick white hit-flash (Highlight fill for ~0.08 s), a slight wobble, chunk particles from `VFXLibrary`, and a floating `+X 💪` number.
+  - Hits are driven by the weapon combo's `Impact` animation event (section 5.6).
+- **At 0 health:**
+  - The mushroom pops into Blender-modeled break chunks and drops its egg(s) and Strength.
+  - It hides for `RespawnTime`, then pops back in at full size and full health with an elastic grow from ~0.2 to 1.0.
+- **Health bar:** a small rounded BillboardGui over the mushroom with fill color by stage (green, then yellow, then red). It shows only while the mushroom is damaged or targeted.
+- Build each mushroom as **one model scaled at runtime**. Do not make three separate models.
+
+---
+
+## 2. HUD, input feedback & UI
+- **Bottom-left stack:**
+  - **Cash**: the largest, boldest element, in a green dollar frame.
+  - **Rebirths** above it.
+  - **Inventory capacity** above that, e.g. `📦 3/3 Full`.
+- **Click feedback:** a floating `+1 💪` (or `+X 💪`) near screen center with a random ±50 px offset. It floats up, scales up elastically and fades out over 0.6 s.
+- **Top-right settings (cog):** a squircle gear button that opens a modal with:
+  - a Music Volume slider (0–100%);
+  - an SFX toggle, which sets `LocalPlayer:SetAttribute("SFXEnabled", bool)`;
+  - a Reduced Motion toggle, which sets `ReducedMotion` and disables camera shake;
+  - a Promo Code box with a Redeem button and success/fail animations.
+- **Left sidebar** of squircle buttons, styled like the approved Shop button (section 5.8):
+  - **Shop** (red basket): Robux purchases only.
+  - **Rebirth** (red/blue arrows).
+  - **Index** (green book).
+  - **Invite** (orange friends).
+  - **Pets/Inventory** (brown paw).
+  - **Quests** (scroll).
+- **UI style:**
+  - Rounded squircle containers and thick black 2-part outlines.
+  - Bold readable type (Fredoka One / Luckiest Guy style) and soft drop shadows.
+  - High-contrast call-to-action buttons.
+  - Elastic Spring/Tween popups.
+- **All button icons and art are rendered in Blender** as cartoon 3D objects with thick black outlines (see 6.6).
+  - Icons of game objects (eggs, monsters, weapons) are rendered from the **same blocky models** used in game.
+
+## 3. Shops, leaderboards & auras (gameplay)
+- **UI Shop (red basket):** Robux only (2x Cash, 2x Strength, Instant Hatch, OP Auto-Clicker, Luck Boosts).
+- **Physical map shops:**
+  1. **"Choppers":** buy axes and swords with Cash.
+  2. **"Upgrades":** Max Inventory Capacity, Player Luck, Weapon Hitbox Range, Movement Speed.
+  3. **"Auras" shrine:** spin for permanent auras for 100k Cash, or a Robux bypass.
+- **Hub leaderboards** (3D, SurfaceGui, OrderedDataStore): Top Cash, Top Strength, Top Rebirths, Top Time Played.
+- **Aura rarities:** Common, Uncommon, Rare, Epic, Legendary, Mythic, Divine, Secret (1 in 100,000+). Effects escalate:
+  - Common to Rare: faint glow.
+  - Mythic and Secret: screen flash, roll cutscene, camera shake, lightning arcs, footstep trails and an overhead title.
+  - All aura VFX art comes from Blender (see 6.5).
+
+---
+
+## 4. Art direction: ONE blocky stud style for everything
+
+Everything (world props, mushrooms, weapons, monsters, eggs, dummies, VFX meshes) is built like the reference screenshots (the ice mammoth and the orca), i.e. like Roblox bricks:
+
+- **Built from boxes.** Chunky, mostly axis-aligned slabs. Organic shapes come from many slabs, never from smooth sculpting.
+- **Studs on every surface,** at a consistent density.
+  - The default is the shared tiling **`StudOverlay`** texture: 1 tile = 0.5 stud, box-projected per slab so studs follow each slab.
+  - Real geometry studs are only for large flat world-prop tops seen from far away, and only within the triangle budget.
+- **Flat saturated plastic colors from a fixed palette.** Each color is its own mesh part (see 6.3). There's no painted or baked color texture.
+- **Rounded masses are stacked cross-slab layers.** Each layer is 3 overlapping slabs (wide-flat, narrow-tall, square-ish), and every slab in a layer has a **different depth**, so no faces are coplanar.
+- **Glow lives in separate parts:** translucent **Glass** crystals and membranes, and **Neon** eyes, cracks and seams. They're never painted onto plastic.
+- **Silhouettes stay chunky and readable.** Details are added by layering more slabs, not by shrinking them.
+
+### 4a. Complexity ladder
+Complexity grows with the zone tier and the rarity. Early content is simple; end-game content is dense and layered like the Frostmane Wyrm.
+
+| Level | Typical asset | Slab count | Must have |
+|---|---|---|---|
+| Simple | Wood tier, Common–Uncommon | 30–120 | Cross-slab body, 2–3 colors, studs, chunky eyes |
+| Detailed | Crystal/Lava tier, Rare–Epic | 120–350 | + crystal clusters or glowing seams, segmented horns/tails, 4–6 colors |
+| Complex | Void tier, Legendary–Mythic | 350–700 | + layered draped plates, wings or frills, 2 glow materials, idle VFX |
+| End-game | Celestial tier, Divine–Secret | 700+ (≤ 20k tris per part) | Everything above, plus a banded **fur-slab coat**, segmented tusks/horns, translucent membrane wings, spine crystal spikes, a crystal-cluster tail, full idle VFX and a hatch sequence. Matches the **Frostmane Wyrm** |
+
+### 4b. Construction vocabulary
+These are the shapes to build with. The code is in `blender/GenerateFrostmaneSet.py`.
+
+| Shape | What it is | Use it for |
+|---|---|---|
+| `box` | One slab with stud UVs; can taper toward one end | Everything |
+| `blob` | A rounded mass of stacked cross-slab layers | Bodies, heads, legs, egg shells |
+| `chain` | Overlapping segment boxes along a curve | Tusks, horns, tails, necks, wing spars, handles |
+| `crystal` | A faceted hexagonal prism with a point | Spikes, crowns, clusters |
+| `fur_plate` | A draped, slightly lifted, tapered slab, sometimes with a notched tip | Mammoth-style fur, manes, cuffs, frost caps, leaves, scales |
+| Membrane tiles | Overlapping thin slabs filling the space between spars | Wings, frills, fins |
+| Banded colour | Diagonal stripes plus noise, whiter toward the top | Coats and plates |
+
+### 4c. Tier theme guide (colours in sRGB hex)
+
+| Tier | Main body | Plates / fur | Glow parts (Glass/Neon) | VFX colours |
+|---|---|---|---|---|
+| Wood | Bark `#6B4A2B`, moss `#4F8A2E` | Leaf `#7CC242`, light leaf `#B5E36A`, rope `#C9A66B` | Spore glow `#B8FF7A` | Soft green spores |
+| Crystal | Birch `#E8E2D4`, stone `#8C93A3` | Lilac `#C9B3FF`, deep `#7B5CD6` | Amethyst `#B48CFF`, quartz `#F2E9FF` | Lavender sparkles |
+| Lava | Basalt `#2B2422`, char `#4A3A33` | Ember `#C2461B`, ash `#7A6E68` | Magma Neon `#FF7A1A`, `#FFC24A` | Orange embers, heat haze |
+| Void | Void-stone `#1E1630`, bone `#E6E0D2` | Dusk `#3B2A5E`, plum `#6A3FA0` | Void glass `#9B5CFF`, wisp `#D7B8FF` | Purple wisps, dark smoke |
+| Celestial | Sapphire `#23489E`, navy `#1C3F8F` | Fur white `#EEF5FF`, ice `#A9D3FF`, blue `#4C8FE6`, belly `#CFE6FF` | Crystal `#7FEAFF`, violet `#B48CFF`, eyes/cracks `#9CFFFF`/`#5FF4FF` | Cyan frost, violet accents |
+
+A tier's weapon, monster, egg and dummy share palette and motifs. For example, every Celestial asset has frost fur slabs, ice tusks and cyan crystals.
+
+---
+
+## 5. Approved references (match this quality and feel)
+
+The first four references are **built** and live in the repo. Open their preview renders before making anything new:
+- `docs/images/FrostmaneWyrm_front.jpg`
+- `docs/images/FrostmaneWyrm_back.jpg`
+- `docs/images/FrostmaneEgg.jpg`
+- `docs/images/FrostmaneVFXMeshes.jpg`
+
+### 5.1 Frostmane Wyrm: end-game monster (Celestial, Secret) ✅ built
+- **Built by:** `blender/GenerateFrostmaneSet.py` → `FrostmaneWyrm.glb`.
+- **Size:** about 19 studs tall and 33 long. The pivot is at ground level under the body; the head points toward Blender −Y.
+- **Mammoth traits:**
+  - a shaggy coat of about 300 draped fur slabs in diagonal white, ice, blue and navy bands;
+  - a long hanging fringe along the lower flanks and a white chest bib;
+  - curling segmented ice tusks from the jaw;
+  - white fur cuffs on thick pillar legs, with white claws and crystal toes.
+- **Dragon traits:**
+  - a long raised neck with a white mane;
+  - a long snout with a frosted brow, fangs and glowing cyan eyes;
+  - swept-back segmented horns with crystal tips;
+  - spiky cheek frills;
+  - half-raised wings with navy spars and translucent ice-tile membranes;
+  - cyan and violet crystal clusters down the spine;
+  - a long tail with plates and crystals, ending in a 6-crystal cluster.
+- **Parts:** 14 colour parts, about 19k triangles in total: Body, Belly, FurWhite, FurIce, FurBlue, FurNavy, Tusks, Claws, WingFrame, WingMembrane, Crystals, CrystalsViolet, Eyes, Mouth.
+- **Sockets:** Mouth, Head, Chest, Spine, TailTip, WingTipL/R, FootFL/FR/BL/BR.
+- **VFX (`FrostmaneVFX.StartWyrm`):** a Highlight and PointLight glow pulse, block sparkles from the wings, a shimmer rising off the spine, cold mist creeping from the feet, drifting blocky snowflakes, motes from the tail tip, and frost-breath flipbook puffs every few seconds.
+
+### 5.2 Frostmane Egg: end-game egg (Celestial, Secret) ✅ built
+- **Built by:** `GenerateFrostmaneSet.py` → `FrostmaneEgg.glb`.
+- **Size:** about 6.5 studs tall.
+- **Shell:** 13 stacked cross-slab layers in alternating navy and blue bands.
+- **Frost cap:** three rings of draped white and ice slabs.
+- **Cracks:** three branching zig-zag seams in Neon cyan.
+- **Crown:** a 6-crystal cluster in cyan and violet.
+- **Nest:** a blocky ring of ice rock with a snow trim and jutting crystals, plus two segmented tusks spiralling up around the egg.
+- **Parts:**
+  - The egg-shell group spins and bobs on an `EggCore` part: Shell, ShellBlue, Frost, FrostIce, Cracks, Crown, CrownViolet.
+  - The nest group stays still: Nest, NestLight, NestSnow, NestCrystals, NestViolet, NestTusks.
+- **Sockets:** EggCenter, Crown, NestRim.
+- **Label (BillboardGui):**
+  - Egg name on top: white Fredoka One with a dark outline.
+  - Rarity underneath: a vertical gradient (icy cyan to violet for Celestial/Secret).
+  - An optional green price line.
+- **VFX:**
+  - `StartEgg`: spin and bob, crown sparkles, crack pulse, rising frost motes, glow.
+  - `PlayHatch`:
+    - a wobble that builds over 1.5 s while the cracks blaze;
+    - a white flash, then a burst of shell shards, a crystal burst and an ice nova ring;
+    - snowflakes, glints, ice shards and a shockwave;
+    - an `onReveal(centre)` callback to spawn the monster.
+
+### 5.3 Frostmane VFX set ✅ built
+- **Textures** (white RGB with the shape in alpha; written by numpy in Blender):
+  - SoftGlow, FrostMote, Sparkle, IceShard, ShockwaveRing, FrostMist, MushroomChunk;
+  - **BlockSparkle** and **BlockSnowflake**, pixel-art drawn on a 16×16 grid so they match the stud style;
+  - FrostStreak, a 256×64 trail strip;
+  - StudOverlay, a 128 px stud tile in Overlay format.
+- **Flipbook:** `FrostBreathFlipbook`, 4×4 at 1024², frame 0 top-left, rendered in Cycles from a 4D-noise puff that swells and erodes.
+- **Meshes** (`FrostmaneVFXMeshes.glb`): NovaRing (18 shards), CrystalBurst (22 radiating shards), Shard01–12 (blocky shell fragments in shell colours).
+- **Rule for every future tier:** make the same family of effects in that tier's palette and motifs.
+  - Wood: leaf and spore pixel sprites.
+  - Lava: ember sprites and a magma-crack flipbook.
+  - Void: wisp sprites and a smoke flipbook.
+
+### 5.4 Weapons: blocky spec (to build next)
+- Weapons follow the same vocabulary as the monsters:
+  - a `chain` handle (segmented, tusk- or root-like);
+  - a head built from stacked slabs;
+  - glow only in Glass/Neon parts;
+  - plates and crystal clusters scaled to the complexity ladder.
+- **Example, "Frostmane Cleaver" (Celestial, Secret):**
+  - twin crescent blades of stepped ice slabs with Neon vein seams;
+  - a segmented ice-tusk handle with white fur-slab wraps;
+  - a crystal-cluster pommel;
+  - a swing trail between the blade tips using `FrostStreak`.
+- **Size:** about 6 studs in hand. The parts are `Handle` (PrimaryPart) and `Head`.
+- **Attachments:** a `TipAttachment` for impact VFX, and `SwingTrail` (a Trail between two attachments).
+- **Grip:** `Tool.Grip = CFrame.new(0, -(HandleLength/2 - 0.45), 0)`. With the arm hanging, the weapon points forward.
+
+### 5.5 Amanita / fly agaric (Zone 1 mushroom), blocky stud style
+- **Size:** about 10.6 studs wide and 16 tall. It should look slim and elegant, not chubby.
+- **Cap:** a bright-red dome stacked from rounded cross-slab layers, deep crimson at the rim fading to bright red on top.
+- **Warts:** about 38 square white warts, grid-aligned and sitting on the surface, spread over the top, shoulders and sides.
+- **Underneath:** pale cream gills with fine radial lines.
+- **Stem:** slim, white and slatted, with darker grooves and a drooping white skirt ring partway up.
+- **Base:** a bulbous foot wrapped in ragged white volva scraps, on a small studded dark-brown dirt patch.
+- **Other mushrooms** follow the same rules in their own species shape and colors, for example porcini, chanterelle and shiitake. Keep them slim; the stem is clearly narrower than the cap.
+- The pivot is at the centre of the base, so the runtime `ScaleTo` shrink stays grounded.
+
+### 5.6 Player weapon animations ✅ built
+- **Built by:** `blender/GenerateCorePlayerAnimations.py` (an R15 rig at 60 fps).
+- **Played by:** `AnimationController` and `AnimationConfig`.
+- **Attack combo (Action2):** four hits cut from one continuous loop, so each hit ends exactly where the next begins and hit 4 flows back into hit 1.
+  1. **Slash** (0.55 s): diagonal, high right to low left.
+  2. **Backhand** (0.55 s): flat, left to right.
+  3. **Uppercut** (0.55 s): rising, low right to overhead.
+  4. **Overhead chop** (0.80 s): two-handed finisher.
+- **How the combo is built:**
+  - Arm joints are solved so the hand reaches its target, with the weapon aimed from the wrist.
+  - The blade edge leads every strike.
+  - Each hit has a 5% overshoot and an elastic settle.
+  - Markers `SwingWhoosh` and `Impact` are on every hit; the finisher has a heavier impact weight.
+  - Speed scales with the Tool's `AttackSpeed` attribute.
+  - Clicks are buffered and holding repeats; the combo resets after 0.45 s idle.
+  - On Impact: hit-stop, camera shake, a particle burst and audio.
+- **Idle_Weapon_Shoulder** (2.8 s loop, Action): wide stance with a cocked hip; the hand is at the chest and the shaft rests on the right shoulder with the head behind; slow breathing.
+- **Run_Weapon_Drag** (0.7 s loop, Movement): about 45° forward lean, a bouncy stride and a pumping free arm. The weapon arm hangs back with the **blade tip on the floor behind**. Speed scales with WalkSpeed.
+- The weapon's direction is baked into **RightHand** (not the Handle bone), so it reads with the default `RightGrip` weld.
+
+### 5.7 Frostcap Dummy: blocky spec (to build)
+- **Shape:** a stud-style ice mushroom dummy, about 12.5 studs tall.
+  - A slatted pale-lavender stem with deep-blue grooves.
+  - A scalloped stepped cap in deep blue, with a white frost-slab top and icicle crystals around the rim.
+  - A crystal crown, and crystal clusters at the base.
+- **Training target:** a stepped-slab bullseye strapped to the stem with two navy slab bands.
+- **Base:** a snow-slab mound.
+- **Game data:** `IsAFKDummy`, `StrengthPerSecond`, `UnlockCost`, `Tier`, and a `HitPoint` socket on the target.
+
+### 5.8 Shop button (UI reference for all sidebar buttons)
+- **Shape:** a rounded square with a thick black outline and a dark-red 3D lip along the bottom.
+- **Face:** a gradient from deep red at the top to bright red, then a white-pink band at the bottom.
+- **Rays:** soft white light wedges radiate from the center behind the icon and turn slowly. They're clipped to the rounded corners, and the gradient lives on its own layer so it doesn't tint the rays.
+- **Icon:** a cartoon 3D basket rendered in Blender (deep pink tiled walls, darker interior, rounded rim, chunky white handle and a thick black outline).
+- **Feel:**
+  - The icon bobs while idle.
+  - Hovering grows the button to 1.1 with Back easing.
+  - Pressing squashes it to 0.88, and releasing springs back with Elastic easing.
+  - Clicking wiggles the icon and fires an `OpenShopRequested` event.
+- **Size:** 72–124 px, square at any screen size.
+
+---
+
+## 6. Blender pipeline (proven rules)
+
+### 6.1 General
+- **Build procedurally with `bpy` generator scripts,** never by hand.
+  - One script per asset family.
+  - Each script is self-contained: copy the "Geometry builder" and "Shared motifs" sections from `GenerateFrostmaneSet.py`.
+  - Scripts must run both from the Text Editor (Alt+P) and headless (`blender --background --python`).
+- **Log and fail safely:**
+  - Write a run log into a text block called `<Set>_Log`.
+  - Wrap `main()` in try/except and log the traceback.
+  - The last log line is `Done. Output: <folder>`.
+- **Output:** `~/Documents/<SetName>/`, containing GLBs, `Textures/`, `Previews/`, the `.blend` and `<Set>_Manifest.json` (palette, per-part colour, triangle count, glow flag, socket positions).
+- **Units:** 1 Blender unit = 1 stud.
+- **Roblox limits:**
+  - ≤ 20,000 triangles per part. Check it and add a Decimate step if over.
+  - Textures at most 1024×1024.
+- **Seeded randomness** (`random.Random(SEED)`), so a re-run gives the same model.
+
+### 6.2 Crash-proof scene rules
+These caused real crashes in Blender 4.2. Follow them every time.
+1. **Use one work scene per script, with one collection per asset** (`<Asset>_Parts`). Never export GLBs from several scenes in one run: the glTF exporter switches the window's scene and crashes on the second one.
+2. **Never give a collection the same name as a scene.** The exporter crashes.
+3. **Never delete the scene that's on screen.** Reuse it and empty its collections instead.
+4. **In `--background`, never assign `window.scene`.** The window is a stub there, so build in `bpy.context.scene`.
+5. **Pass `view_layer=` to every `select_set()` call** and use `bpy.context.temp_override(...)` for operators.
+6. **Name helper objects per asset** (`<Asset>_Cam`, `_Sun`, `_Ground`, `_World`) and reuse them, so re-runs don't create `.001` copies. Purge orphan data before rebuilding.
+7. **Both scripts must survive two runs in a row in one session.** Test that before calling a script done.
+
+### 6.3 Building assets
+- **Each palette colour is its own mesh part,** named after its palette key (`FurWhite`, `Crystals`, ...). Part names must be unique across the whole set: for example `Tusks` on the monster and `NestTusks` on the egg.
+- **UVs:** box-projected in each slab's own frame, × `STUDS_PER_UNIT` (2). This is what makes `StudOverlay` tile studs correctly.
+- **No coplanar faces.** Give overlapping slabs different depths and offsets. Coplanar faces render as black patches in Cycles and z-fight in Roblox.
+- **Sockets:** VFX anchor points are tiny tetra meshes named `Socket_<Name>`, exported with the model. Studio turns them into Attachments.
+- **Pivots:**
+  - Monsters, dummies and props: ground level under the centre of mass.
+  - Eggs: the centre of the nest base.
+  - Mushrooms: the centre of the base.
+- **Facing:** the head points to Blender −Y. Keep a `FACE_POSITIVE_Y` switch, and check the facing after import.
+
+### 6.4 Materials, preview and export
+- **Preview material** = palette colour mixed with `StudOverlay` (RGB weighted by alpha). Glow parts get Principled emission, plus transmission for Glass-type parts.
+- **The GLB gets flat palette materials,** swapped in just for export. glTF can't carry the preview texture mix, and the exporter crashed on it.
+- **Preview renders:**
+  - Cycles CPU, about 24 samples with denoise, `Standard` view transform, studded green ground.
+  - Front-three-quarter and back views.
+  - Raise `transparent_max_bounces` to 64 and `transmission_bounces` to 32, otherwise stacked glass renders black.
+  - Blender looks frozen while rendering; that's normal. A `RENDER_PREVIEWS` switch skips rendering.
+- **Verify every asset from its preview render** before calling it done: facing, proportions, black patches, washed-out glow and hidden details.
+
+### 6.5 VFX
+Effects run in Roblox as ParticleEmitters, Beams, Trails, Highlights and lights, but **every texture and mesh they use is made in Blender**. Never use Roblox's built-in particle textures.
+- **Particle textures:** pure white RGB with the shape in the alpha channel, written with numpy (`save_rgba`). Make soft versions and **pixel-art blocky versions** (16×16 grid, upscaled with hard edges) for the stud style.
+- **Flipbooks:**
+  - Render 16 frames of an animated Cycles shader (4D noise with W animated, plus an erosion value) on a transparent background.
+  - Pack them into a 4×4 grid at 1024², frame 0 top-left, row by row.
+  - In Roblox: `FlipbookLayout = Grid4x4`, `FlipbookMode = OneShot`.
+- **VFX meshes:** built with the same vocabulary (crystal rings and bursts, shell shards, slash arcs, the level-up pillar) and exported as one `<Set>VFXMeshes.glb`.
+- **Trails and beams:** horizontal strips with the head on the left and soft lengthwise streaks.
+- **Record every texture id in `ReplicatedStorage.VFXLibrary`.** `"rbxassetid://0"` means "not uploaded", and the effect is skipped.
+
+### 6.6 UI icons
+- Render the in-game blocky models at 512×512 with Cycles and an orthographic camera, transparent background and `Standard` view transform.
+- Thick black outlines come from Freestyle: silhouette/border at about 9 px, plus a thinner dark crease lineset.
+- Use saturated base colours with low emission so they don't wash out.
+
+### 6.7 Getting assets into Studio
+- **Meshes:** File (or Home/Avatar) → **Import 3D** → the `.glb`. Keep the default settings and rename the model to the asset name.
+- **Images:** Studio Asset Manager → **Bulk Import** → right-click each image → **Copy Asset ID** → paste into `VFXLibrary`. The place must be published first.
+  - Alternatively, serve the folder from Blender over `127.0.0.1` and use Studio's image upload.
+- **Keep the beginner guide in step:** whenever the asset flow changes, update `docs/Guide_AddFrostmaneToRoblox.md`, or a per-set guide in the same style. Write it assuming the reader has never used Blender or Studio.
+
+---
+
+## 7. Studio assembly rules
+- **Assembly is a one-time step run from the Studio command bar** in Edit mode, never in Play. `SurfaceAppearance.ColorMap` can only be set from Studio. It follows the pattern of `FrostmaneVFX.Assemble(model, kind)`:
+  1. Colour each part from the palette and set its material:
+     - plastic parts: SmoothPlastic plus a `SurfaceAppearance` with AlphaMode = Overlay and ColorMap = `StudOverlay`;
+     - crystals and membranes: **Glass**, transparency 0.15–0.3;
+     - eyes, cracks and seams: **Neon**.
+  2. Move the glowing parts into a `Glow` sub-model, so **one** Highlight covers them all.
+  3. Anchor the root part (`Body` for monsters, `Nest` for eggs, `Handle` for weapons). Every other part gets a WeldConstraint to it and is set unanchored, Massless and CanCollide = false.
+  4. Eggs: the shell parts are welded to an anchored, invisible `EggCore`, which the idle animation moves.
+  5. Turn `Socket_*` parts into Attachments, then delete the sockets. The Mouth attachment faces out of the mouth.
+  6. Fill in any missing attributes and set `PrimaryPart`. Assemble must be safe to re-run.
+- **Glow** (strongest first, all subtle so the colours stay readable):
+  - a Highlight on the `Glow` model (FillTransparency 0.66–0.8, Occluded, pulsing);
+  - a PointLight in the tier colour (Brightness ~1.4–2, Range 9–14);
+  - emitters using textures from `VFXLibrary` (LightEmission 1, LightInfluence 0).
+- **Attributes:**
+  - **Weapons:** `WeaponType`, `Tier`, `Rarity`, `Damage`, `StrengthPerClick`, `CashPrice`, `AttackSpeed`.
+  - **Monsters:** `MonsterName`, `Rarity`, `Tier`, `SourceEgg`, `HatchChance`, `CashPerSecond`, `StrengthMultiplier`, `LuckMultiplier`, `IndexReward`, `IdleHover`.
+  - **Eggs:** `EggName`, `Rarity`, `Tier`, `TopDrop`, `TopDropChance`.
+  - **Mushrooms:** `MushroomType`, `Zone`, `MaxHealth`, `Health`, `Stage`, `StrengthReward`, `EggDrop`, `RespawnTime`.
+  - **Dummies:** `IsAFKDummy`, `StrengthPerSecond`, `UnlockCost`, `Tier`.
+- **Runtime effects API** (copy this pattern for every set):
+  - `Start<Monster>(model)` and `StartEgg(model, {PriceText})` return a handle with `.Stop()`.
+  - `PlayHatch(egg, onReveal)`.
+  - `ResetEgg(egg)`.
+- **Placement:**
+  - Raycast to the ground, and keep assets from overlapping each other or the SpawnLocation.
+  - Keep cyan or coloured lights from tinting neighbouring props.
+- **Never edit during Play mode,** because changes are lost. Stop the playtest first.
+- Don't modify or delete anything I didn't ask about.
+- **Verify every asset** with a preview render (Blender) or a screenshot (Studio) before calling it done.
+
+---
+
+## 8. Repo layout & code deliverables (production-ready Luau)
+
+```
+blender/                                  bpy generators (one per asset family)
+src/ReplicatedStorage/                    ModuleScripts
+src/StarterPlayer/StarterPlayerScripts/   client LocalScripts
+src/ServerScriptService/                  server Scripts
+docs/                                     guides, this brief, preview images (docs/images)
+```
+
+**Done** (extend these; don't rewrite them):
+1. `AnimationController.lua` and `AnimationConfig.lua`: the weapon combo, shoulder idle and drag run (5.6).
+2. `blender/GenerateCorePlayerAnimations.py`: the R15 rig and the animation clips.
+3. `blender/GenerateFrostmaneSet.py`: the Frostmane Wyrm, Frostmane Egg and Frostmane VFX set (5.1–5.3).
+4. `FrostmaneVFX.lua`, `VFXLibrary.lua` and `FrostmaneDemo.lua` (click-to-hatch demo).
+5. Docs: `docs/Guide_AddFrostmaneToRoblox.md` (beginner guide), `docs/FrostmaneSet.md` and `docs/PlayerAnimations.md`.
+
+**To build:**
+1. **`HUDAndFeedbackController.lua`** (client):
+   - the bottom-left stack;
+   - the Settings modal (music, SFX, reduced motion, codes);
+   - floating `+X 💪` popups;
+   - the sidebar button feel (5.8).
+2. **`MushroomHealthService.lua`** (server):
+   - mushroom health and damage (validating the `ChopImpact` remote that `AnimationConfig` fires), and the 3 stages (1.0 / 0.8 / 0.6 scale);
+   - shrink tweens, break, egg and Strength drops, and respawn;
+   - remote events for client hit VFX and health bars.
+3. **`EggIncubatorService.lua`** (server): capacity checks, zone egg spawning, plot placement, hatch timers, weighted monster rolls and passive income. Hatching uses the `StartEgg`, `PlayHatch` and `Start<Monster>` pattern.
+4. **`IndexRewardService.lua`** (server): records discoveries and grants one-time Cash rewards.
+5. **`UpgradesService.lua`** (server): Choppers weapon purchases, plus the Upgrades stats (capacity, luck, hitbox range, WalkSpeed).
+6. **`StrengthLevelService.lua`** (server): click gains, levels, rebirth level walls and the level-up lightbeam event.
+7. **`LeaderboardService.lua`** (server): the 3D leaderboards with OrderedDataStore.
+8. **Blender generators** for every remaining asset family, each following section 6 and reusing the Frostmane vocabulary:
+   - the other tiers' monsters, eggs and VFX;
+   - weapons (5.4);
+   - mushrooms (5.5);
+   - dummies (5.7);
+   - world props;
+   - UI icons.
+9. **Design spec sheet:**
+   - colour hex palettes;
+   - tween and easing values;
+   - floating-text mechanics;
+   - camera shake;
+   - particle emitter settings;
+   - the egg hatch cutscene;
+   - the level-up beam;
+   - the weapon combo.
+
+**Code conventions:**
+- Asset ids of `"rbxassetid://0"` are skipped with a single warning, never an error.
+- Hooks and callbacks run inside `pcall`.
+- Client effects respect `SFXEnabled` and `ReducedMotion`.
+- Lint Luau with selene; Python must compile.
+- Test every Blender script headless by running it twice in a row in one session.
+
+---
+
+## 9. How I'll ask
+- "Make a [tier] [axe/sword] called [name]."
+- "Make a [rarity] [tier] monster called [name]" (optionally "based on a [creature]").
+- "Make the [tier] egg" / "Make the [tier] training dummy."
+- "Make a [species] mushroom for zone [N]."
+- "Make the [name] sidebar button."
+- "Make the [effect] VFX" (e.g. hit sparks, egg hatch burst, level-up beam).
+
+**For every asset, deliver all of these:**
+- the Blender generator;
+- the GLB(s) plus preview renders committed to `docs/images`;
+- its VFX textures and meshes;
+- a Luau effects module following the `FrostmaneVFX` pattern;
+- the `VFXLibrary` entries;
+- a beginner-guide section.
+
+Match the complexity ladder (4a) to the tier and rarity.
+
+**Naming:** if I don't give a name, invent a two-word fantasy name in the set's pattern (material + noun), for example Frostmane Wyrm, Frostmane Egg, Frostmane Cleaver, Emberbark Splitter, Voidspine Lurker.

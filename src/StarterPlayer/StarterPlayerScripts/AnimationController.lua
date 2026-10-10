@@ -2,11 +2,17 @@
 	AnimationController  (LocalScript)
 	Location: StarterPlayer.StarterPlayerScripts.AnimationController
 
-	Client motion engine for R15 weapon locomotion and chopping.
+	Client motion engine for R15 weapon locomotion and attacks.
 
-	  Idle   (Action)    Idle_Weapon_Guard   breathing guard loop while standing
-	  Run    (Movement)  Run_Weapon_Forward  playback speed follows ground speed / WalkSpeed
-	  Swing  (Action2)   Weapon_Chop_Heavy   speed scales with Tool:GetAttribute("AttackSpeed")
+	  Idle     (Action)   Idle_Weapon_Shoulder  breathing loop, weapon resting on the shoulder
+	  Run      (Movement) Run_Weapon_Drag       playback speed follows ground speed / WalkSpeed
+	  Attack1-4 (Action2) slash, backhand, uppercut, overhead chop: a combo that
+	                      loops; speed scales with Tool:GetAttribute("AttackSpeed")
+
+	Each click plays the next combo step. A click inside the last InputBufferTime
+	of a hit, or holding the mouse, chains straight into the next step: the clips
+	meet pose-for-pose, so the chain (and its wrap from Attack4 to Attack1) is
+	seamless. Pausing longer than Combo.ResetTime restarts the combo at step 1.
 
 	Only Tools that carry a `WeaponType` attribute drive these tracks. Without one,
 	and while jumping/falling/climbing/swimming, Roblox's default Animate script
@@ -18,7 +24,7 @@
 	  SwingWhoosh  whoosh sound + enables the Tool's SwingTrail
 	  Impact       hit-stop, camera shake, Blender-textured particle burst, impact sound
 	If the uploaded clip has no events (Blender markers don't survive FBX import),
-	the controller fires them on a timer from AnimationConfig.Tracks.Swing.Events,
+	the controller fires them on a timer from each attack's Events in AnimationConfig,
 	scaled by the current playback speed. The first real marker retires the timer.
 
 	Public API (from any other LocalScript):
@@ -283,7 +289,10 @@ function Controller.new(player: Player, character: Model)
 
 		tool = nil,
 		weaponType = nil,
-		roles = {}, -- "Idle" | "Run" | "Swing" -> { track, def, assetId }
+		roles = {}, -- "Idle" | "Run" -> { track, def, assetId }
+		combo = {}, -- ordered attack roles: { track, def, assetId, name }
+		comboIndex = 0, -- last combo step played
+		lastSwingEnded = -math.huge,
 
 		state = "None", -- "None" | "Idle" | "Run" | "Suspended"
 		belowExitTime = 0,
@@ -416,11 +425,17 @@ function Controller:_onToolAdded(tool: Tool)
 	self.roles = {
 		Idle = self:_resolveRole("Idle"),
 		Run = self:_resolveRole("Run"),
-		Swing = self:_resolveRole("Swing"),
 	}
-	if self.roles.Swing then
-		self:_bindSwingTrack(self.roles.Swing)
+	self.combo = {}
+	for _, stepName in AnimationConfig.GetComboSteps(self.weaponType) do
+		local role = self:_resolveRole(stepName)
+		if role then
+			role.name = stepName
+			self:_bindSwingTrack(role)
+			table.insert(self.combo, role)
+		end
 	end
+	self.comboIndex = 0
 
 	table.insert(self.toolConnections, tool.Activated:Connect(function()
 		self.holding = true
@@ -458,6 +473,8 @@ function Controller:_unequip()
 	self.tool = nil
 	self.weaponType = nil
 	self.roles = {}
+	self.combo = {}
+	self.comboIndex = 0
 	self.holding = false
 	self.swingQueued = false
 	runHooks("WeaponUnequipped", ctx)
@@ -575,10 +592,15 @@ function Controller:_update(dt: number)
 		local track = swing.track
 		local length = if track.Length > 0 then track.Length else swing.def.ClipLength
 		local remainingSeconds = (length - track.TimePosition) / swing.speed
-		local fadeOutTime = swing.def.FadeOut or AnimationConfig.DefaultFadeTime
+		-- Chaining into the next hit: run to the clip's end (it meets the next
+		-- clip pose-for-pose) and hand over with a tiny cross-fade. Otherwise
+		-- stop a touch early so the fade-out overlaps the clip's own settle.
+		local chaining = self:_wantsChain()
+		local fadeOutTime = if chaining
+			then AnimationConfig.Combo.ChainFadeTime
+			else swing.def.FadeOut or AnimationConfig.DefaultFadeTime
 
 		if remainingSeconds <= fadeOutTime or os.clock() > swing.deadline then
-			-- Stop a touch early so the fade-out overlaps the clip's own settle.
 			track:Stop(fadeOutTime)
 			self:_finishSwing(swing)
 		end
@@ -596,8 +618,12 @@ function Controller:_attackSpeed(): number
 	return math.clamp(value, settings.MinAttackSpeed, settings.MaxAttackSpeed)
 end
 
+function Controller:_wantsChain(): boolean
+	return self.swingQueued or (AnimationConfig.Swing.HoldToRepeat and self.holding)
+end
+
 function Controller:RequestSwing(): boolean
-	if self.destroyed or not self.tool or not self.roles.Swing then
+	if self.destroyed or not self.tool or #self.combo == 0 then
 		return false
 	end
 
@@ -616,8 +642,11 @@ function Controller:RequestSwing(): boolean
 	return true
 end
 
-function Controller:_startSwing()
-	local role = self.roles.Swing
+function Controller:_startSwing(chained: boolean?)
+	-- Continue the combo if the last hit just ended, else restart at step 1.
+	local continuing = chained or (os.clock() - self.lastSwingEnded) <= AnimationConfig.Combo.ResetTime
+	self.comboIndex = if continuing then self.comboIndex % #self.combo + 1 else 1
+	local role = self.combo[self.comboIndex]
 	local def = role.def
 	local track = role.track
 
@@ -633,6 +662,8 @@ function Controller:_startSwing()
 		track = track,
 		def = def,
 		assetId = role.assetId,
+		step = self.comboIndex,
+		stepName = role.name,
 		attackSpeed = attackSpeed,
 		speed = speed,
 		fired = {},
@@ -645,7 +676,7 @@ function Controller:_startSwing()
 	if track.IsPlaying then
 		track:Stop(0)
 	end
-	track:Play(def.FadeIn, def.Weight, speed)
+	track:Play(if chained then AnimationConfig.Combo.ChainFadeTime else def.FadeIn, def.Weight, speed)
 
 	runHooks("SwingStarted", self:_context("SwingStarted"))
 
@@ -672,13 +703,14 @@ function Controller:_finishSwing(swing, suppressRepeat: boolean?)
 		self:_fireSwingEvent("Impact", swing)
 	end
 
+	self.lastSwingEnded = os.clock()
 	runHooks("SwingEnded", self:_context("SwingEnded", swing))
 
 	if suppressRepeat or self.destroyed or not self.tool then
 		return
 	end
-	if self.swingQueued or (AnimationConfig.Swing.HoldToRepeat and self.holding) then
-		self:_startSwing()
+	if self:_wantsChain() then
+		self:_startSwing(true)
 	end
 end
 
@@ -709,10 +741,11 @@ function Controller:_onImpact(swing, ctx)
 	local effects = AnimationConfig.Effects
 
 	-- Heavy impact frame: freeze on contact, then let the follow-through go.
+	local impactScale = swing.def.ImpactScale or 1
 	local hitStop = effects.HitStop
 	if hitStop.Enabled and swing.active then
 		swing.track:AdjustSpeed(swing.speed * hitStop.SpeedScale)
-		task.delay(hitStop.Duration, function()
+		task.delay(hitStop.Duration * impactScale, function()
 			if self.swing == swing and swing.active then
 				swing.track:AdjustSpeed(swing.speed)
 			end
@@ -720,7 +753,7 @@ function Controller:_onImpact(swing, ctx)
 	end
 
 	if effects.ScreenShake.Enabled and LocalPlayer:GetAttribute("ReducedMotion") ~= true then
-		CameraShake.Add(effects.ScreenShake.ImpactTrauma)
+		CameraShake.Add(effects.ScreenShake.ImpactTrauma * impactScale)
 	end
 
 	if ctx.Position then
@@ -785,6 +818,9 @@ function Controller:_context(eventName: string, swing)
 		Tier = tool and tool:GetAttribute("Tier"),
 		AttackSpeed = if swing then swing.attackSpeed else self:_attackSpeed(),
 		SwingId = swing and swing.id,
+		ComboStep = swing and swing.step,
+		ComboTrack = swing and swing.stepName,
+		ImpactScale = swing and swing.def.ImpactScale or 1,
 		State = self.state,
 	}
 end

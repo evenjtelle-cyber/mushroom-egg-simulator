@@ -6,6 +6,8 @@
 |---|---|
 | ![Frostmane Wyrm, back](images/FrostmaneWyrm_back.jpg) | ![Frostmane Egg](images/FrostmaneEgg.jpg) |
 
+![VFX meshes: ice nova ring, crystal burst and hatch shell shards](images/FrostmaneVFXMeshes.jpg)
+
 The renders come from the generator itself: Cycles previews on a studded ground plane.
 
 ## Style

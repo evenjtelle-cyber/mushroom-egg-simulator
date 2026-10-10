@@ -536,17 +536,18 @@ def setup_preview(scene, coll, target, distance, height, angle_deg, lens=50, gro
     scene.cycles.transmission_bounces = 32
     scene.cycles.max_bounces = 32
     scene.render.film_transparent = False
-    world = bpy.data.worlds.new(scene.name + "_World")
+    world_name = coll.name.replace("_Parts", "") + "_World"
+    world = bpy.data.worlds.get(world_name) or bpy.data.worlds.new(world_name)
     world.use_nodes = True
     bg = world.node_tree.nodes["Background"]
     bg.inputs["Color"].default_value = linear_rgba("#BFE3FF")
     bg.inputs["Strength"].default_value = 0.9
     scene.world = world
 
-    sun_data = bpy.data.lights.new(scene.name + "_Sun", "SUN")
+    sun_data = bpy.data.lights.new(coll.name.replace("_Parts", "") + "_Sun", "SUN")
     sun_data.energy = 3.2
     sun_data.angle = math.radians(8)
-    sun = bpy.data.objects.new(scene.name + "_Sun", sun_data)
+    sun = bpy.data.objects.new(coll.name.replace("_Parts", "") + "_Sun", sun_data)
     sun.rotation_euler = (math.radians(50), math.radians(-12), math.radians(-35))
     coll.objects.link(sun)
 
@@ -558,17 +559,17 @@ def setup_preview(scene, coll, target, distance, height, angle_deg, lens=50, gro
         for face in bm.faces:
             for loop in face.loops:
                 loop[uv].uv = (loop.vert.co.x, loop.vert.co.y)
-        mesh = bpy.data.meshes.new(scene.name + "_Ground")
+        mesh = bpy.data.meshes.new(coll.name.replace("_Parts", "") + "_Ground")
         bm.to_mesh(mesh)
         bm.free()
-        ground_obj = bpy.data.objects.new(scene.name + "_Ground", mesh)
+        ground_obj = bpy.data.objects.new(coll.name.replace("_Parts", "") + "_Ground", mesh)
         PALETTE.setdefault("PreviewGrass", "#5FC23A")
         ground_obj.data.materials.append(material_for("PreviewGrass"))
         coll.objects.link(ground_obj)
 
-    cam_data = bpy.data.cameras.new(scene.name + "_Cam")
+    cam_data = bpy.data.cameras.new(coll.name.replace("_Parts", "") + "_Cam")
     cam_data.lens = lens
-    cam = bpy.data.objects.new(scene.name + "_Cam", cam_data)
+    cam = bpy.data.objects.new(coll.name.replace("_Parts", "") + "_Cam", cam_data)
     a = math.radians(angle_deg)
     target = Vector(target)
     cam.location = target + Vector((math.sin(a) * distance, -math.cos(a) * distance, height))

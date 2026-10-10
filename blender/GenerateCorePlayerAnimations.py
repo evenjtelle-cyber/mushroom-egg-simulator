@@ -982,8 +982,8 @@ def reset_pose(rig):
 def export_fbx(scene, rig, filepath, all_actions):
     view_layer = scene.view_layers[0]
     for obj in view_layer.objects:
-        obj.select_set(False)
-    rig.select_set(True)
+        obj.select_set(False, view_layer=view_layer)
+    rig.select_set(True, view_layer=view_layer)
     view_layer.objects.active = rig
 
     with scene_override(scene, active=rig, selected=[rig]):

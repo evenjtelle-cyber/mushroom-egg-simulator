@@ -5,10 +5,17 @@
 	Single source of truth for the player weapon motion suite used by
 	StarterPlayerScripts.AnimationController.
 
-	Clips are authored by blender/GenerateCorePlayerAnimations.py at 30 fps:
-	  Weapon_Chop_Heavy   frames 0-18  (0.600 s)  markers: SwingWhoosh @5, Impact @8
-	  Idle_Weapon_Guard   frames 0-24  (0.800 s)  loop
-	  Run_Weapon_Forward  frames 0-16  (0.533 s)  loop
+	Clips are authored by blender/GenerateCorePlayerAnimations.py at 60 fps:
+	  Attack1_Slash          0.55 s  forehand diagonal slice   SwingWhoosh 0.183  Impact 0.283
+	  Attack2_Backhand       0.55 s  flat backhand slice       SwingWhoosh 0.167  Impact 0.267
+	  Attack3_Uppercut       0.55 s  rising slice              SwingWhoosh 0.167  Impact 0.267
+	  Attack4_OverheadChop   0.80 s  two-handed chop finisher  SwingWhoosh 0.250  Impact 0.367
+	  Idle_Weapon_Shoulder   2.80 s  loop, shaft resting on the right shoulder
+	  Run_Weapon_Drag        0.70 s  loop, deep lean, blade tip dragging behind
+
+	The four attacks are cut from one continuous combo: each ends exactly where
+	the next begins (pose and velocity), and Attack4 flows back into Attack1, so
+	chained or held swings loop seamlessly.
 
 	After importing each clip in Studio's Animation Editor and publishing it,
 	paste the resulting asset ids into Tracks below. An id of "rbxassetid://0"
@@ -25,7 +32,7 @@
 
 local AnimationConfig = {}
 
-local FPS = 30
+local FPS = 60
 AnimationConfig.FrameRate = FPS
 
 -- Cross-fade used for every state change unless a track overrides it.
@@ -35,51 +42,75 @@ AnimationConfig.DefaultFadeTime = 0.15
 -- Tracks
 ----------------------------------------------------------------------
 -- Priority order (low -> high): Core < Idle < Movement < Action < Action2 < Action3 < Action4.
--- Roblox's default Animate script plays at Core, so all three tracks below win over it.
--- Swing sits one level above Idle so a chop fully replaces the idle's upper body
+-- Roblox's default Animate script plays at Core, so every track below wins over it.
+-- Attacks sit one level above Idle so a swing fully replaces the idle's upper body
 -- instead of averaging 50/50 with it (same-priority tracks blend by weight).
-AnimationConfig.Tracks = {
-	Swing = {
-		AssetId = "rbxassetid://0", -- Weapon_Chop_Heavy
+local function attack(assetId: string, frameCount: number, whooshFrame: number, impactFrame: number, impactScale: number)
+	return {
+		AssetId = assetId,
 		Priority = Enum.AnimationPriority.Action2,
 		Looped = false,
 		DefaultSpeed = 1.0,
 		-- Snappy in, soft out: a 0.15 s fade-in would swallow most of a sped-up
-		-- 4-frame anticipation, so the swing pops in fast and settles out slowly.
-		FadeIn = 0.06,
+		-- anticipation, so the first hit pops in fast and the last settles slowly.
+		FadeIn = 0.08,
 		FadeOut = 0.15,
 		Weight = 1,
-		ClipLength = 18 / FPS,
+		ClipLength = frameCount / FPS,
 		-- Clip-time (at speed 1) of each event. Used as a fallback when the
 		-- uploaded clip has no animation events (FBX import does not carry
 		-- Blender markers). Once a real marker fires, the fallback is retired.
 		Events = {
-			SwingWhoosh = 5 / FPS,
-			Impact = 8 / FPS,
+			SwingWhoosh = whooshFrame / FPS,
+			Impact = impactFrame / FPS,
 		},
-	},
+		-- Scales camera shake and hit-stop for this hit (the finisher lands hardest).
+		ImpactScale = impactScale,
+	}
+end
+
+AnimationConfig.Tracks = {
+	Attack1 = attack("rbxassetid://0", 33, 11, 17, 0.8), -- Attack1_Slash
+	Attack2 = attack("rbxassetid://0", 33, 10, 16, 0.8), -- Attack2_Backhand
+	Attack3 = attack("rbxassetid://0", 33, 10, 16, 0.9), -- Attack3_Uppercut
+	Attack4 = attack("rbxassetid://0", 48, 15, 22, 1.6), -- Attack4_OverheadChop
 
 	Idle = {
-		AssetId = "rbxassetid://0", -- Idle_Weapon_Guard
+		AssetId = "rbxassetid://0", -- Idle_Weapon_Shoulder
 		Priority = Enum.AnimationPriority.Action,
 		Looped = true,
-		-- The 24-frame breath is 0.8 s at 30 fps; 0.3x gives a calm ~2.7 s breath.
-		DefaultSpeed = 0.3,
+		DefaultSpeed = 1.0, -- 2.8 s breath
 		FadeIn = 0.15,
 		FadeOut = 0.15,
 		Weight = 1,
 	},
 
 	Run = {
-		AssetId = "rbxassetid://0", -- Run_Weapon_Forward
+		AssetId = "rbxassetid://0", -- Run_Weapon_Drag
 		Priority = Enum.AnimationPriority.Movement,
 		Looped = true,
-		-- At BaseWalkSpeed the 16-frame cycle plays at this rate (~0.63 s per stride pair).
-		DefaultSpeed = 0.85,
+		-- At BaseWalkSpeed the 0.7 s stride cycle plays at this rate.
+		DefaultSpeed = 1.0,
 		FadeIn = 0.15,
 		FadeOut = 0.15,
 		Weight = 1,
 	},
+}
+
+----------------------------------------------------------------------
+-- Attack combo
+----------------------------------------------------------------------
+AnimationConfig.Combo = {
+	-- Played in order, wrapping back to the first. Steps whose AssetId isn't
+	-- uploaded yet are skipped. Swords and axes both use this mix of slices
+	-- and chops; reorder or trim it per weapon with WeaponTypeOverrides.
+	Steps = { "Attack1", "Attack2", "Attack3", "Attack4" },
+	-- If the next attack starts within this long after the last one ended, the
+	-- combo continues. Otherwise it restarts at step 1.
+	ResetTime = 0.45,
+	-- Cross-fade between chained hits. The clips already meet pose-for-pose,
+	-- so this only needs to hide a frame of timing jitter.
+	ChainFadeTime = 0.04,
 }
 
 ----------------------------------------------------------------------
@@ -142,9 +173,11 @@ AnimationConfig.Weapon = {
 	TrailLinger = 0.12,
 }
 
--- Per-WeaponType clip swaps. Any field set here replaces the field in Tracks.
--- Example:
---   Sword = { Swing = { AssetId = "rbxassetid://123", Events = { SwingWhoosh = 3/30, Impact = 6/30 } } },
+-- Per-WeaponType tweaks. A track name (Attack1, Idle, Run, ...) replaces fields
+-- in that track; ComboSteps replaces the combo order for that weapon type.
+-- Examples:
+--   Axe = { ComboSteps = { "Attack1", "Attack4" } },           -- slice then big chop
+--   Sword = { Attack4 = { AssetId = "rbxassetid://123" } },     -- a sword-specific finisher
 AnimationConfig.WeaponTypeOverrides = {
 	Axe = {},
 	Sword = {},
@@ -245,7 +278,8 @@ AnimationConfig.Effects = {
 --              "WeaponEquipped", "WeaponUnequipped", "StateChanged".
 -- Every callback receives one ctx table:
 --   { Event, Player, Character, Tool, WeaponType, Tier, AttackSpeed,
---     SwingId, Position (Vector3?, Impact/Whoosh only), State (StateChanged only) }
+--     SwingId, ComboStep (1-based), ComboTrack ("Attack1"...), ImpactScale,
+--     Position (Vector3?, Impact/Whoosh only), State (StateChanged only) }
 -- Callbacks run inside pcall, so a broken hook never stalls the animation loop.
 AnimationConfig.Hooks = {
 	SwingStarted = {},
@@ -258,7 +292,7 @@ AnimationConfig.Hooks = {
 			local remotes = ReplicatedStorage:FindFirstChild("Remotes")
 			local remote = remotes and remotes:FindFirstChild("ChopImpact")
 			if remote and remote:IsA("RemoteEvent") then
-				remote:FireServer(ctx.Tool, ctx.SwingId)
+				remote:FireServer(ctx.Tool, ctx.SwingId, ctx.ComboStep)
 			end
 		end,
 	},
@@ -299,6 +333,12 @@ function AnimationConfig.GetTrackDef(trackName: string, weaponType: string?)
 		merged[key] = value
 	end
 	return merged
+end
+
+-- Combo order for a weapon type (falls back to Combo.Steps).
+function AnimationConfig.GetComboSteps(weaponType: string?): { string }
+	local overrides = weaponType and AnimationConfig.WeaponTypeOverrides[weaponType]
+	return (overrides and overrides.ComboSteps) or AnimationConfig.Combo.Steps
 end
 
 function AnimationConfig.IsValidAssetId(assetId: string?): boolean

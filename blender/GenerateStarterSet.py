@@ -1134,6 +1134,9 @@ def smooth_and_bake(scene, obj, texture_name):
     paint = paint_material(texture_name + "_Paint")
     obj.data.materials.clear()
     obj.data.materials.append(paint)
+    old = bpy.data.images.get(texture_name)
+    if old is not None:  # from a previous run; keeps the name free of ".001"
+        bpy.data.images.remove(old)
     image = bpy.data.images.new(texture_name, BAKE_SIZE, BAKE_SIZE, alpha=False)
     target = paint.node_tree.nodes.new("ShaderNodeTexImage")
     target.image = image

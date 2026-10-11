@@ -6,9 +6,12 @@
 	are white RGB with the shape in alpha, so ParticleEmitter.Color tints one
 	texture to any tier colour.
 
-	Source files: ~/Documents/FrostmaneSet/Textures/*.png, written by
-	blender/GenerateFrostmaneSet.py. Upload each one (Studio image upload,
-	or the localhost route in brief 6.6) and paste the rbxassetid here.
+	Source files: ~/Documents/FrostmaneSet/Textures/*.png and
+	~/Documents/StarterSet/Textures/*.png, written by
+	blender/GenerateFrostmaneSet.py and blender/GenerateStarterSet.py
+	(StudOverlay.png is identical in both folders; upload it once).
+	Upload each one (Studio Asset Manager -> Bulk Import, or the localhost
+	route in brief 6.6) and paste the rbxassetid here.
 	"rbxassetid://0" means "not uploaded yet": every effect that uses it is
 	skipped instead of falling back to built-in Roblox textures.
 ]]
@@ -27,6 +30,12 @@ return {
 	ShockwaveRing = "rbxassetid://0",
 	FrostMist = "rbxassetid://0",
 	MushroomChunk = "rbxassetid://0", -- AnimationController impact debris
+
+	-- Wood tier / starter set (~/Documents/StarterSet/Textures)
+	Spore = "rbxassetid://0", -- soft forest spore
+	LeafBit = "rbxassetid://0", -- pixel-art leaf (stud style)
+	DustPuff = "rbxassetid://0", -- landing / hatch dust
+	SwingStreak = "rbxassetid://0", -- weapon swing trail strip (256x64, head on the left)
 
 	-- Flipbooks (1024x1024, 4x4 grid, frame 0 top-left): FlipbookLayout = Grid4x4
 	FrostBreathFlipbook = "rbxassetid://0",

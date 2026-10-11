@@ -256,16 +256,16 @@ The first four references are **built** and live in the repo. Open their preview
 ### 5.4b Mossbark Egg and Mosscap Toad: Common examples (Wood) ✅ built
 - **Built by:** `GenerateStarterSet.py` → `MossbarkEgg.glb` and `MosscapToad.glb`.
 - **They mark the bottom of the complexity ladder:**
-  - Mossbark Egg: about 2.1k triangles, 11 parts.
+  - Mossbark Egg: about 1.2k triangles, 8 parts.
   - Mosscap Toad: about 2.7k triangles, 10 parts.
-- **Mossbark Egg:** a bark-brown banded shell, a draping moss-leaf cap, a sprout on top and a tiny red mushroom growing on its side, sitting in a twig nest with straw and pebbles.
+- **Mossbark Egg:** a bark-brown banded shell, a draping moss-leaf cap, a sprout on top and a tiny red mushroom growing on its side, sitting straight on the ground (no nest).
 - **Mosscap Toad:**
   - a chubby moss-green toad with big eyes, blushing cheeks and a smile;
   - folded legs and toes, and moss tufts down its back;
   - a red Amanita cap with white warts, which ties it to the Zone 1 mushroom.
 - **Effects:**
   - Toad: idle hops with a landing squash and a dust puff, plus drifting spores.
-  - Egg: bob and spin, falling leaves, sprout spores, and a "Common" label.
+  - Egg: rocks side to side on the ground (pivoting at its base), falling leaves, sprout spores, and a "Common" label.
   - Hatch: a wobble, then shell shards, a leaf burst and dust.
 - **Studio:** `StarterSet.lua` (`Assemble`, `StartToad`, `StartEgg`, `PlayHatch`, `ResetEgg`).
 
@@ -414,7 +414,7 @@ Effects run in Roblox as ParticleEmitters, Beams, Trails, Highlights and lights,
      - crystals and membranes: **Glass**, transparency 0.15–0.3;
      - eyes, cracks and seams: **Neon**.
   2. Move the glowing parts into a `Glow` sub-model, so **one** Highlight covers them all.
-  3. Anchor the root part (`Body` for monsters, `Nest` for eggs, `Handle` for weapons). Every other part gets a WeldConstraint to it and is set unanchored, Massless and CanCollide = false.
+  3. Anchor the root part (`Body` for monsters, `Nest` or an invisible `EggCore` at the base for eggs, `Handle` for weapons). Every other part gets a WeldConstraint to it and is set unanchored, Massless and CanCollide = false.
   4. Eggs: the shell parts are welded to an anchored, invisible `EggCore`, which the idle animation moves.
   5. Turn `Socket_*` parts into Attachments, then delete the sockets. The Mouth attachment faces out of the mouth.
   6. Fill in any missing attributes and set `PrimaryPart`. Assemble must be safe to re-run.

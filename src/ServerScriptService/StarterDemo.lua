@@ -3,7 +3,7 @@
 	Location: ServerScriptService.StarterDemo
 
 	A test so you can see the starter set working in Play mode:
-	  * the Mossbark Egg in Workspace bobs, drops leaves and shows its label;
+	  * the Mossbark Egg in Workspace rocks on the ground, drops leaves and shows its label;
 	  * click it: it wobbles and bursts, and a Mosscap Toad hops out next to it;
 	  * 10 seconds later the toad goes away and the egg is ready again.
 	  * The Mossbark Hatchet is in your backpack (StarterPack) after setup;
@@ -30,7 +30,7 @@ S.StartEgg(egg, { PriceText = "$25" }) -- PlayHatch stops these idle effects by 
 
 local clicker = Instance.new("ClickDetector")
 clicker.MaxActivationDistance = 40
-clicker.Parent = egg -- on the model, so clicking any part of the egg or nest counts
+clicker.Parent = egg -- on the model, so clicking any part of the egg counts
 
 local busy = false
 clicker.MouseClick:Connect(function()

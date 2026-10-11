@@ -5,7 +5,7 @@
 	Studio assembly and runtime effects for the Wood-tier starter set made by
 	blender/GenerateStarterSet.py:
 	  Mossbark Hatchet  starter axe, smooth cartoon style   MossbarkHatchet.glb
-	  Mossbark Egg      most common egg (blocky)            MossbarkEgg.glb
+	  Mossbark Egg      most common egg (blocky, no nest)   MossbarkEgg.glb
 	  Mosscap Toad      its first Common monster (blocky)   MosscapToad.glb
 	  Hatch shards                                          MossbarkVFXMeshes.glb -> ReplicatedStorage.VFXMeshes
 
@@ -18,7 +18,7 @@
 
 	2) RUNTIME:
 	     local handle = S.StartToad(toadModel)      -- idle hops, spores, dust on landing
-	     local handle = S.StartEgg(eggModel)        -- bob/spin, falling leaves, spores, label
+	     local handle = S.StartEgg(eggModel)        -- rocks on the ground, falling leaves, spores, label
 	     handle.Stop()
 	     S.PlayHatch(eggModel, function(centre) spawnToad(centre) end)
 	     S.ResetEgg(eggModel)
@@ -44,9 +44,6 @@ StarterSet.PALETTE = {
 	EggSprout = "#5FA83A",
 	EggShroom = "#E5402F",
 	EggShroomSpots = "#FFF7EC",
-	NestTwig = "#5A3B22",
-	NestStraw = "#C9A66B",
-	NestPebble = "#8C8C82",
 	ToadBody = "#6DBE45",
 	ToadBelly = "#F1E7C2",
 	ToadMoss = "#4F8A2E",
@@ -62,11 +59,11 @@ StarterSet.PALETTE = {
 -- Small face parts stay smooth (studs would make the eyes look noisy).
 local NO_STUDS = { ToadEyes = true, ToadPupils = true, ToadMouth = true }
 
+-- Every part of the egg; all of them hide when it hatches.
 local EGG_SHELL_PARTS = {
 	EggShell = true, EggShellLight = true, EggMoss = true, EggLeaf = true,
 	EggLeafLight = true, EggSprout = true, EggShroom = true, EggShroomSpots = true,
 }
-local EGG_SHELL_SOCKETS = { EggCenter = true, Crown = true }
 
 StarterSet.ATTRIBUTES = {
 	Toad = {
@@ -223,7 +220,7 @@ end
 -- Assemble(model, "Egg" | "Toad"). Safe to run again.
 function StarterSet.Assemble(model: Model, kind: string)
 	assert(kind == "Egg" or kind == "Toad", "kind must be \"Egg\" or \"Toad\"")
-	local rootName = if kind == "Toad" then "ToadBody" else "NestTwig"
+	local rootName = if kind == "Toad" then "ToadBody" else "EggShell"
 
 	local parts = {}
 	for _, d in model:GetDescendants() do
@@ -243,45 +240,50 @@ function StarterSet.Assemble(model: Model, kind: string)
 	assert(root, "Assemble: no part named " .. rootName .. " in " .. model:GetFullName())
 
 	local sockets = collectSockets(model)
-	local core = nil
 	if kind == "Egg" then
-		core = model:FindFirstChild("EggCore", true)
+		-- The egg sits on the ground with no nest. An invisible anchored core at
+		-- its base centre is the root, so idle rocking and the hatch wobble
+		-- pivot around the point that touches the ground.
+		local core = model:FindFirstChild("EggCore", true)
 		if not core then
 			core = Instance.new("Part")
 			core.Name = "EggCore"
-			core.Size = Vector3.one
+			core.Size = Vector3.new(0.5, 0.5, 0.5)
 			core.Transparency = 1
 			core.CanCollide = false
 			core.CanQuery = false
 			core.Parent = model
 		end
-		local centre = root.Position
+		local _, size = model:GetBoundingBox()
+		local base = Vector3.new(root.Position.X, root.Position.Y - size.Y / 2, root.Position.Z)
 		for _, s in sockets do
-			if s.Name == "Socket_EggCenter" then
-				centre = s.Position
+			if s.Name == "Socket_Ground" then
+				base = s.Position
 			end
 		end
-		core.CFrame = CFrame.new(centre)
-		core.Anchored = true
+		core.CFrame = CFrame.new(base)
+		root.CanCollide = true -- the shell itself stays solid
+		root = core
 	end
 
 	root.Anchored = true
 	for _, p in parts do
-		local key = baseName(p)
-		applyLook(p, key)
+		applyLook(p, baseName(p))
 		if p ~= root then
 			p.Anchored = false
 			p.Massless = true
-			p.CanCollide = false
+			if baseName(p) ~= "EggShell" then
+				p.CanCollide = false
+			end
 			local weld = Instance.new("WeldConstraint")
 			weld.Name = "StarterWeld"
-			weld.Part0 = if core and EGG_SHELL_PARTS[key] then core else root
+			weld.Part0 = root
 			weld.Part1 = p
 			weld.Parent = p
 		end
 	end
-	socketsToAttachments(sockets, function(name)
-		return if core and EGG_SHELL_SOCKETS[name] then core else root
+	socketsToAttachments(sockets, function()
+		return root
 	end)
 
 	for key, value in StarterSet.ATTRIBUTES[kind] do
@@ -494,8 +496,9 @@ end
 
 local eggHandles = setmetatable({}, { __mode = "k" })
 
---[[ Mossbark Egg idle: slow spin and bob over the nest, leaves drifting off
-     the moss cap, spores around the sprout, and the name/rarity label.
+--[[ Mossbark Egg idle: it sits on the ground and gives a little rock from
+     side to side every few seconds (pivoting at its base), with leaves
+     drifting off the moss cap, spores around the sprout and the label.
      options = { PriceText = "$25", ShowLabel = true } ]]
 function StarterSet.StartEgg(model: Model, options)
 	options = options or {}
@@ -503,11 +506,17 @@ function StarterSet.StartEgg(model: Model, options)
 	local core = model:FindFirstChild("EggCore", true)
 	if core then
 		local base = core.CFrame
-		local t, angle = 0, 0
+		local t = 0
+		local every, duration, maxTilt = 3.2, 0.9, math.rad(7)
 		table.insert(handle.connections, RunService.Heartbeat:Connect(function(dt)
 			t += dt
-			angle += dt * 0.5
-			core.CFrame = base * CFrame.new(0, math.sin(t * 1.5) * 0.18, 0) * CFrame.Angles(0, angle, 0)
+			local phase = t % every
+			local tilt = 0
+			if phase < duration then
+				local s = phase / duration
+				tilt = math.sin(s * math.pi * 3) * (1 - s) * maxTilt -- three settling rocks
+			end
+			core.CFrame = base * CFrame.Angles(0, 0, tilt)
 		end))
 		handle.coreBase = base
 	end
@@ -556,7 +565,10 @@ function StarterSet.PlayHatch(model: Model, onReveal: ((Vector3) -> ())?)
 			core.CFrame = idle.coreBase
 		end
 	end
-	local centre = if core then core.Position else model:GetPivot().Position
+	local middle = attachmentAt(model, "EggCenter")
+	local centre = if middle then middle.WorldPosition
+		elseif core then core.Position + Vector3.new(0, 2, 0)
+		else model:GetPivot().Position
 
 	if core then
 		local base = core.CFrame

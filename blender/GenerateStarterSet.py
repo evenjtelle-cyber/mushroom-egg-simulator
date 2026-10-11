@@ -14,8 +14,8 @@ Builds three assets in one scene, "StarterSet", one collection per asset:
                    (the Tool handle) and Head.
   MossbarkEgg      The most common egg (Wood, Common). Blocky stud style: a
                    bark-brown banded shell, a draping moss-leaf cap, a sprout on
-                   top and a tiny red mushroom on its side, in a twig nest.
-                   About 5 studs tall.
+                   top and a tiny red mushroom on its side. No nest: it sits
+                   straight on the ground (pivot at the base). About 4.8 studs tall.
   MosscapToad      The first Common monster from that egg. Blocky stud style,
                    simple (Common on the complexity ladder): a chubby moss-green
                    toad with big eyes, blushing cheeks, moss tufts and a red
@@ -73,9 +73,6 @@ PALETTE = {
     "EggSprout": "#5FA83A",
     "EggShroom": "#E5402F",
     "EggShroomSpots": "#FFF7EC",
-    "NestTwig": "#5A3B22",
-    "NestStraw": "#C9A66B",
-    "NestPebble": "#8C8C82",
     # Mosscap Toad
     "ToadBody": "#6DBE45",
     "ToadBelly": "#F1E7C2",
@@ -1176,7 +1173,7 @@ def smooth_and_bake(scene, obj, texture_name):
 # ---------------------------------------------------------------------------
 # 2. Mossbark Egg (blocky, Common)
 # ---------------------------------------------------------------------------
-EGG_BASE_Z = 0.85
+EGG_BASE_Z = 0.0  # the egg sits straight on the ground
 EGG_HEIGHT = 4.0
 EGG_RADIUS = 1.6
 
@@ -1193,7 +1190,7 @@ def egg_surface(t, a, out=0.0):
 
 def build_mossbark_egg(coll):
     rng = random.Random(SEED + 3)
-    shell, nest = PartBuilder(), PartBuilder()
+    shell = PartBuilder()
 
     layers = 11
     for i in range(layers):
@@ -1239,36 +1236,12 @@ def build_mossbark_egg(coll):
         spot_pos = cap_centre + out * 0.12 + d * 0.26
         shell.box("EggShroomSpots", spot_pos, (0.12, 0.12, 0.06), basis(out * 0.6 + d * 0.8, out))
 
-    # Nest: a flat twig base, two rings of crossing twigs, straw tufts, pebbles.
-    nest.blob("NestTwig", (0, 0, 0.22), (2.1, 0.22, 2.1), step=0.44, rot=basis_from_y((0, 0, 1), (0, 1, 0)))
-    for ring_i, (radius, z) in enumerate(((1.95, 0.55), (1.75, 0.85))):
-        for k in range(14):
-            a0 = 2 * math.pi * k / 14 + ring_i * 0.2
-            a1 = a0 + 2 * math.pi / 14 * 1.6
-            p0 = Vector((math.cos(a0) * radius, math.sin(a0) * radius, z + rng.uniform(-0.08, 0.08)))
-            p1 = Vector((math.cos(a1) * radius, math.sin(a1) * radius, z + rng.uniform(-0.08, 0.08)))
-            nest.chain("NestTwig", [p0, (p0 + p1) / 2 + Vector((0, 0, 0.1)), p1], [0.2, 0.17], roll_hint=(0, 0, 1))
-    for k in range(10):
-        a = 2 * math.pi * k / 10 + 0.3
-        radial = Vector((math.cos(a), math.sin(a), 0))
-        nest.box("NestStraw", radial * 2.05 + Vector((0, 0, 0.75)), (0.12, 0.6, 0.12),
-                 basis_from_y(radial + Vector((0, 0, 0.6)), (0, 0, 1)))
-    for k in range(5):
-        a = rng.uniform(0, 2 * math.pi)
-        nest.box("NestPebble", Vector((math.cos(a) * 2.35, math.sin(a) * 2.35, 0.15)), (0.35, 0.3, 0.25),
-                 euler_deg(0, 0, rng.uniform(0, 90)))
-
-    shell_objects = shell.to_objects(coll)
-    nest_objects = nest.to_objects(coll)
-    objects = dict(shell_objects)
-    objects.update(nest_objects)
+    objects = shell.to_objects(coll)
     assign_materials(objects)
-    for part, obj in objects.items():
-        obj["EggGroup"] = "Shell" if part in shell_objects else "Nest"
     sockets = [
         add_socket(coll, "EggCenter", (0, 0, EGG_BASE_Z + EGG_HEIGHT * 0.45)),
         add_socket(coll, "Crown", stem[-1] + Vector((0, 0, 0.5))),
-        add_socket(coll, "NestRim", (0, 0, 0.9)),
+        add_socket(coll, "Ground", (0, 0, 0.05)),  # base centre: the egg rocks and hatches around this
     ]
     return objects, sockets
 
@@ -1444,7 +1417,7 @@ def main():
         check_budget(objects, "MossbarkEgg")
         manifest["MossbarkEgg"] = collect_manifest("MossbarkEgg", objects, sockets)
         export_glb(scene, list(objects.values()) + sockets, os.path.join(OUTPUT_DIR, "MossbarkEgg.glb"))
-        setup_preview(scene, coll, target=(0, 0, 2.6), distance=15, height=3.0, angle_deg=-30, size=(900, 900))
+        setup_preview(scene, coll, target=(0, 0, 2.2), distance=14, height=2.6, angle_deg=-30, size=(900, 900))
         render_preview(scene, "MossbarkEgg.png")
 
     if BUILD_MONSTER:

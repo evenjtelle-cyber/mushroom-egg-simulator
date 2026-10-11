@@ -2,9 +2,10 @@
 
 > Paste this whole document at the start of a new session. It replaces the first master brief.
 > **What changed from v1:**
-> - Every asset now uses one **blocky stud style**.
+> - Creatures, eggs, dummies, mushrooms, props and VFX meshes use one **blocky stud style**. **Weapons are the exception:** they're **smooth and cartoony** (see 4d).
 > - The references are now the assets built in this repo:
 >   - Frostmane Wyrm, Frostmane Egg and the Frostmane VFX set;
+>   - the Wood starter set: the Mossbark Hatchet, the Mossbark Egg and the Mosscap Toad;
 >   - the 4-hit weapon combo, the shoulder idle and the drag run.
 > - Sections 6–8 record the pipeline that was actually proven to work, including the Blender crash rules.
 
@@ -104,9 +105,9 @@ Every mushroom has health and visibly shrinks as it's chopped:
 
 ---
 
-## 4. Art direction: ONE blocky stud style for everything
+## 4. Art direction: blocky creatures and world, smooth cartoon weapons
 
-Everything (world props, mushrooms, weapons, monsters, eggs, dummies, VFX meshes) is built like the reference screenshots (the ice mammoth and the orca), i.e. like Roblox bricks:
+Everything **except weapons** (world props, mushrooms, monsters, eggs, dummies, VFX meshes) is built like the reference screenshots (the ice mammoth and the orca), i.e. like Roblox bricks. Weapons follow 4d instead.
 
 - **Built from boxes.** Chunky, mostly axis-aligned slabs. Organic shapes come from many slabs, never from smooth sculpting.
 - **Studs on every surface,** at a consistent density.
@@ -152,6 +153,19 @@ These are the shapes to build with. The code is in `blender/GenerateFrostmaneSet
 
 A tier's weapon, monster, egg and dummy share palette and motifs. For example, every Celestial asset has frost fur slabs, ice tusks and cyan crystals.
 
+### 4d. Weapons: smooth cartoon hero style (the exception)
+Weapons are **not** blocky. They look like hand-painted cartoon toys: the in-game root-and-ice axe the user showed as a reference, shaped like a classic stylised game axe. The built reference is the **Mossbark Hatchet** (5.4).
+- **Soft, chunky, readable shapes.** Use smooth subdivided geometry: tubes along curves for hafts, wraps and rings; Coons-patch blades that are thick at the socket and thin at the edge; small spheres for rivets.
+- **Hand-painted look, baked into one texture per part:**
+  - painted base colours (vertex colours);
+  - procedural detail: hammered steel dents, wood grain, leather grain, brass speckle;
+  - ambient occlusion in the crevices;
+  - a bright rim on convex edges;
+  - a sharpened, bright cutting edge.
+- **Materials tell the tier story.** Starters are steel, wood, leather and brass. Higher tiers swap in their elemental hero material (ice crystal, magma rock, void-stone) and add glow parts. The glow is always a separate Glass/Neon part, never painted.
+- **Details that sell it:** worn edge chips, crossed leather wraps, brass collars and rivets, chain rings, pommel spikes and slightly curved hafts.
+- **No studs on weapons.**
+
 ---
 
 ## 5. Approved references (match this quality and feel)
@@ -161,6 +175,9 @@ The first four references are **built** and live in the repo. Open their preview
 - `docs/images/FrostmaneWyrm_back.jpg`
 - `docs/images/FrostmaneEgg.jpg`
 - `docs/images/FrostmaneVFXMeshes.jpg`
+- `docs/images/MossbarkHatchet.jpg`
+- `docs/images/MossbarkEgg.jpg`
+- `docs/images/MosscapToad.jpg`
 
 ### 5.1 Frostmane Wyrm: end-game monster (Celestial, Secret) ✅ built
 - **Built by:** `blender/GenerateFrostmaneSet.py` → `FrostmaneWyrm.glb`.
@@ -219,20 +236,38 @@ The first four references are **built** and live in the repo. Open their preview
   - Lava: ember sprites and a magma-crack flipbook.
   - Void: wisp sprites and a smoke flipbook.
 
-### 5.4 Weapons: blocky spec (to build next)
-- Weapons follow the same vocabulary as the monsters:
-  - a `chain` handle (segmented, tusk- or root-like);
-  - a head built from stacked slabs;
-  - glow only in Glass/Neon parts;
-  - plates and crystal clusters scaled to the complexity ladder.
-- **Example, "Frostmane Cleaver" (Celestial, Secret):**
-  - twin crescent blades of stepped ice slabs with Neon vein seams;
-  - a segmented ice-tusk handle with white fur-slab wraps;
-  - a crystal-cluster pommel;
-  - a swing trail between the blade tips using `FrostStreak`.
-- **Size:** about 6 studs in hand. The parts are `Handle` (PrimaryPart) and `Head`.
-- **Attachments:** a `TipAttachment` for impact VFX, and `SwingTrail` (a Trail between two attachments).
-- **Grip:** `Tool.Grip = CFrame.new(0, -(HandleLength/2 - 0.45), 0)`. With the arm hanging, the weapon points forward.
+### 5.4 Mossbark Hatchet: starter axe (Wood, Common) ✅ built
+- **Built by:** `blender/GenerateStarterSet.py` → `MossbarkHatchet.glb`, smooth cartoon style (4d).
+- **Size:** about 4.6 studs long. The parts are `Handle` (the Tool handle) and `Head`, each with its own baked 1024² colour texture and 8–13k triangles.
+- **Head:**
+  - a bearded steel blade with soft hammered dents, a bright sharpened edge and two small edge chips;
+  - a brass eye collar with darker rims and two rivets per cheek;
+  - a rounded steel poll with a brass chain ring and a hanging link.
+- **Handle:**
+  - a slightly S-curved wooden haft with grain and a small knot;
+  - crossed green leather wraps and a green band under the head;
+  - a brass lower collar with a rivet, a brass pommel cap and a small curved pommel spike.
+- **Sockets:** `Tip` becomes `TipAttachment` (where the impact burst plays); `TrailTop` and `TrailBottom` carry the `SwingTrail`.
+- **Studio:** `StarterSet.MakeTool` builds the Tool:
+  - grip at 0.95 studs up from the bottom of the handle, with a `GRIP_YAW_DEGREES` switch if the blade faces the wrong way;
+  - attributes `WeaponType = "Axe"`, Damage, AttackSpeed and so on.
+- **Every future weapon** follows this pipeline and shape language. Higher tiers swap the steel for the tier's elemental material, add glow parts and get bigger silhouettes.
+
+### 5.4b Mossbark Egg and Mosscap Toad: Common examples (Wood) ✅ built
+- **Built by:** `GenerateStarterSet.py` → `MossbarkEgg.glb` and `MosscapToad.glb`.
+- **They mark the bottom of the complexity ladder:**
+  - Mossbark Egg: about 2.1k triangles, 11 parts.
+  - Mosscap Toad: about 2.7k triangles, 10 parts.
+- **Mossbark Egg:** a bark-brown banded shell, a draping moss-leaf cap, a sprout on top and a tiny red mushroom growing on its side, sitting in a twig nest with straw and pebbles.
+- **Mosscap Toad:**
+  - a chubby moss-green toad with big eyes, blushing cheeks and a smile;
+  - folded legs and toes, and moss tufts down its back;
+  - a red Amanita cap with white warts, which ties it to the Zone 1 mushroom.
+- **Effects:**
+  - Toad: idle hops with a landing squash and a dust puff, plus drifting spores.
+  - Egg: bob and spin, falling leaves, sprout spores, and a "Common" label.
+  - Hatch: a wobble, then shell shards, a leaf burst and dust.
+- **Studio:** `StarterSet.lua` (`Assemble`, `StartToad`, `StartEgg`, `PlayHatch`, `ResetEgg`).
 
 ### 5.5 Amanita / fly agaric (Zone 1 mushroom), blocky stud style
 - **Size:** about 10.6 studs wide and 16 tall. It should look slim and elegant, not chubby.
@@ -352,6 +387,14 @@ Effects run in Roblox as ParticleEmitters, Beams, Trails, Highlights and lights,
 - Thick black outlines come from Freestyle: silhouette/border at about 9 px, plus a thinner dark crease lineset.
 - Use saturated base colours with low emission so they don't wash out.
 
+### 6.6b Smooth weapon pipeline (4d)
+1. **Build with `SmoothBuilder`** from `GenerateStarterSet.py`: tubes with parallel-transport frames, Coons-patch blades and spheres. Each face corner carries a painted `Col` and a detail `Mask` (R steel, G wood, B leather, A brass).
+2. **Subdivide once** (level 1) and apply it. Keep each part under 20k triangles; aim for 8–13k.
+3. **Smart UV Project**, then **bake the DIFFUSE COLOR pass** (Cycles) of the paint shader into a 1024² texture.
+4. **Swap to a plain textured material.** Remove the vertex colours **by name**: removing them through stale references deleted the UV map.
+5. **Mark the part `KeepMaterial`**, so the GLB export keeps the baked texture instead of a flat palette colour.
+6. **Export sockets** (`Tip`, `TrailTop`, `TrailBottom`) as `Socket_*` meshes.
+
 ### 6.7 Getting assets into Studio
 - **Meshes:** File (or Home/Avatar) → **Import 3D** → the `.glb`. Keep the default settings and rename the model to the asset name.
 - **Images:** Studio Asset Manager → **Bulk Import** → right-click each image → **Copy Asset ID** → paste into `VFXLibrary`. The place must be published first.
@@ -361,6 +404,10 @@ Effects run in Roblox as ParticleEmitters, Beams, Trails, Highlights and lights,
 ---
 
 ## 7. Studio assembly rules
+- **Weapons:** a one-time `MakeTool` command-bar step (pattern: `StarterSet.MakeTool`):
+  - turn the imported model into a Tool whose `Handle` is the handle part, with `Head` welded to it;
+  - turn the sockets into `TipAttachment` plus a `SwingTrail` between `TrailTop` and `TrailBottom`;
+  - set `Tool.Grip` (the grip distance and the yaw are settings) and the weapon attributes.
 - **Assembly is a one-time step run from the Studio command bar** in Edit mode, never in Play. `SurfaceAppearance.ColorMap` can only be set from Studio. It follows the pattern of `FrostmaneVFX.Assemble(model, kind)`:
   1. Colour each part from the palette and set its material:
      - plastic parts: SmoothPlastic plus a `SurfaceAppearance` with AlphaMode = Overlay and ColorMap = `StudOverlay`;
@@ -409,7 +456,11 @@ docs/                                     guides, this brief, preview images (do
 2. `blender/GenerateCorePlayerAnimations.py`: the R15 rig and the animation clips.
 3. `blender/GenerateFrostmaneSet.py`: the Frostmane Wyrm, Frostmane Egg and Frostmane VFX set (5.1–5.3).
 4. `FrostmaneVFX.lua`, `VFXLibrary.lua` and `FrostmaneDemo.lua` (click-to-hatch demo).
-5. Docs: `docs/Guide_AddFrostmaneToRoblox.md` (beginner guide), `docs/FrostmaneSet.md` and `docs/PlayerAnimations.md`.
+5. `blender/GenerateStarterSet.py`, `StarterSet.lua` and `StarterDemo.lua`: the Wood starter set (5.4, 5.4b).
+6. Docs:
+   - `docs/Guide_AddFrostmaneToRoblox.md` and `docs/Guide_StarterSet.md` (beginner guides);
+   - `docs/FrostmaneSet.md`;
+   - `docs/PlayerAnimations.md`.
 
 **To build:**
 1. **`HUDAndFeedbackController.lua`** (client):
@@ -428,7 +479,7 @@ docs/                                     guides, this brief, preview images (do
 7. **`LeaderboardService.lua`** (server): the 3D leaderboards with OrderedDataStore.
 8. **Blender generators** for every remaining asset family, each following section 6 and reusing the Frostmane vocabulary:
    - the other tiers' monsters, eggs and VFX;
-   - weapons (5.4);
+   - the remaining weapons (smooth style, 4d and 5.4);
    - mushrooms (5.5);
    - dummies (5.7);
    - world props;
@@ -464,7 +515,7 @@ docs/                                     guides, this brief, preview images (do
 - the Blender generator;
 - the GLB(s) plus preview renders committed to `docs/images`;
 - its VFX textures and meshes;
-- a Luau effects module following the `FrostmaneVFX` pattern;
+- a Luau effects module following the `FrostmaneVFX` / `StarterSet` pattern;
 - the `VFXLibrary` entries;
 - a beginner-guide section.
 

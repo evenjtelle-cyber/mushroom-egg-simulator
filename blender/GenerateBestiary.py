@@ -1501,7 +1501,9 @@ def druzy_lynx(c):
                   snout_role="Belly", nose="Nose")
     ears(c, "Fur", g, "pointy", size=0.58, inner="Belly", tilt=10)
     for side in (-1, 1):
-        c.b.box("Tuft", (side * g["head_r"] * 0.55, g["hy"] + 0.1, g["hz"] + g["head_r"] + 0.85), (0.08, 0.08, 0.4))
+        # Tuft on the ear tip (ears() tilts the tips outward and back a little).
+        c.b.box("Tuft", (side * (g["head_r"] * 0.55 + 0.1), g["hy"] + g["head_r"] * 0.1 + 0.1,
+                         g["hz"] + g["head_r"] * 0.8 + 0.58 * 0.95 + 0.12), (0.09, 0.09, 0.42), euler_deg(-8, side * 12, 0))
         for k in range(2):
             fur_plate(c.b, Vector((side * g["head_r"] * 0.9, g["hy"] - 0.1 + k * 0.2, g["hz"] - 0.2)), (side, -0.3, 0),
                       (side * 0.3, 0.3, -1), c.rng, 0.35, 0.5, "Belly", thickness=0.1)

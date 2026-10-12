@@ -6,10 +6,10 @@
 	are white RGB with the shape in alpha, so ParticleEmitter.Color tints one
 	texture to any tier colour.
 
-	Source files: ~/Documents/FrostmaneSet/Textures/*.png and
-	~/Documents/StarterSet/Textures/*.png, written by
-	blender/GenerateFrostmaneSet.py and blender/GenerateStarterSet.py
-	(StudOverlay.png is identical in both folders; upload it once).
+	Source files: ~/Documents/FrostmaneSet/Textures/*.png,
+	~/Documents/StarterSet/Textures/*.png and ~/Documents/Bestiary/Textures/*.png,
+	written by blender/GenerateFrostmaneSet.py, GenerateStarterSet.py and
+	GenerateBestiary.py (StudOverlay.png is identical in every folder; upload it once).
 	Upload each one (Studio Asset Manager -> Bulk Import, or the localhost
 	route in brief 6.6) and paste the rbxassetid here.
 	"rbxassetid://0" means "not uploaded yet": every effect that uses it is
@@ -36,6 +36,11 @@ return {
 	LeafBit = "rbxassetid://0", -- pixel-art leaf (stud style)
 	DustPuff = "rbxassetid://0", -- landing / hatch dust
 	SwingStreak = "rbxassetid://0", -- weapon swing trail strip (256x64, head on the left)
+
+	-- Bestiary themes (~/Documents/Bestiary/Textures), used by CreatureKit
+	Ember = "rbxassetid://0", -- pixel-art ember (Lava, Obsidian)
+	VoidWisp = "rbxassetid://0", -- soft smoky wisp (Void)
+	Glint = "rbxassetid://0", -- sharp four-point gem glint (Crystal, Geode, Mythic+)
 
 	-- Flipbooks (1024x1024, 4x4 grid, frame 0 top-left): FlipbookLayout = Grid4x4
 	FrostBreathFlipbook = "rbxassetid://0",

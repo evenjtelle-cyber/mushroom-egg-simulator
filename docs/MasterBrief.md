@@ -29,6 +29,8 @@ Act as Executive Roblox Game Designer, Lead Systems Engineer, Technical Artist (
 - **Monsters:** eggs hatch into 3D monsters by weighted luck rolls.
   - Hatched monsters stay on the plot earning **passive Cash/sec**.
   - One monster can be equipped to follow the player, giving Strength and Luck multipliers.
+  - A follower also gives a rarity bonus: extra **WalkSpeed** from +1 (Common) to +12 (Secret) and extra **Cash** from +5% to +150%. The table is `CreatureKit.FOLLOWER_BONUS`.
+- **Eggs and monsters:** 9 eggs (Mossbark → Celestial) with 4 monsters each. Every stat (hatch odds, Cash/s, Strength and Luck multipliers, hatch time, sell price, drop areas) is in `ReplicatedStorage.BestiaryData`, generated from the `FAMILIES` table in `blender/GenerateBestiary.py`. Hatch odds are before Luck.
 - **Index discovery reward:** unlocking a new monster in the Index grants a one-time Cash reward scaled by rarity.
 - **Strength & levels:**
   - Clicking gives +Strength and +XP.
@@ -178,6 +180,7 @@ The first four references are **built** and live in the repo. Open their preview
 - `docs/images/MossbarkHatchet.jpg`
 - `docs/images/MossbarkEgg.jpg`
 - `docs/images/MosscapToad.jpg`
+- `docs/images/Bestiary_<Family>.jpg`: every other egg and monster, one sheet per egg family (5.4c)
 
 ### 5.1 Frostmane Wyrm: end-game monster (Celestial, Secret) ✅ built
 - **Built by:** `blender/GenerateFrostmaneSet.py` → `FrostmaneWyrm.glb`.
@@ -268,6 +271,34 @@ The first four references are **built** and live in the repo. Open their preview
   - Egg: rocks side to side on the ground (pivoting at its base), falling leaves, sprout spores, and a "Common" label.
   - Hatch: a wobble, then shell shards, a leaf burst and dust.
 - **Studio:** `StarterSet.lua` (`Assemble`, `StartToad`, `StartEgg`, `PlayHatch`, `ResetEgg`).
+
+### 5.4c Bestiary: every other egg and monster ✅ built
+- **Built by:** `GenerateBestiary.py` → one `Family_<Egg>.glb` per egg family, `BestiaryVFXMeshes.glb` (white hatch shards) and `BestiaryData.lua`.
+- **7 eggs and 34 monsters:**
+
+  | Egg | Monsters (most common first) |
+  |---|---|
+  | Mossbark (5.4b) | Mosscap Toad (5.4b), Twigroot Boar, Barkhorn Stag, Oakheart Golem |
+  | Fernleaf | Fernling Snail, Leafwing Beetle, Thornback Hedgehog, Elderfern Treant |
+  | Toadstool | Spotcap Frog, Puffball Bunny, Sporecloak Fox, Toadstool Titan |
+  | Crystal | Quartzpaw Kit, Amethyst Moth, Prismhorn Ram, Geodeback Tortoise |
+  | Geode | Shardling Mole, Druzy Lynx, Gemhorn Rhino, Prismatic Basilisk |
+  | Lava | Cinderpaw Pup, Magmashell Crab, Emberwing Drake, Obsidian Colossus |
+  | Obsidian | Ashen Imp, Slagback Boar, Basalt Wyvern, Molten Behemoth |
+  | Void | Voidmote Wisp, Gloomfang Wolf, Nullhorn Beast, Abyssbone Leviathan |
+  | Celestial = Frostmane Egg (5.2) | Starfrost Owl, Glacierhorn Elk, Frostroot Wyrmling, Frostmane Wyrm (5.1) |
+
+- **The complexity ladder (4a) in practice:**
+  - Each family's most common monster is the plainest: a cute slab body, 2–3 colours, big eyes.
+  - Each rarity step adds texture: spots, plates, fur coats, crystals, then Glass/Neon glow parts, wings and horns. Size grows with rarity too (`RARITY_SCALE`).
+  - Eggs follow the same rule. Fernleaf is plainer than Mossbark; Obsidian and Void have gold rings, glowing seams and crystal crowns. Every egg sits straight on the ground.
+  - Every asset is 0.8k–4.2k triangles in 4–14 parts.
+- **Effects (`CreatureKit.lua`, all driven by `BestiaryData`):**
+  - Monster idles from the data: `Hop`, `Hover` or `Breathe`.
+  - Theme particles: spores, leaves, sparkles, glints, embers, void wisps or frost motes. The particle rate grows with rarity, Epic+ get a light, and Legendary+ get a glow Highlight.
+  - Eggs rock on the ground and show a name, rarity and price label.
+  - Hatch: a wobble, a flash, shards in the egg's own colours and a theme burst; Epic+ eggs add a shockwave.
+- **Studio:** `CreatureKit.lua` (`Unpack`, `Assemble`, `StartMonster`, `StartEgg`, `PlayHatch`, `ResetEgg`, `RollHatch`, `FollowerBonus`) and `BestiaryDemo.lua`.
 
 ### 5.5 Amanita / fly agaric (Zone 1 mushroom), blocky stud style
 - **Size:** about 10.6 studs wide and 16 tall. It should look slim and elegant, not chubby.
@@ -457,8 +488,9 @@ docs/                                     guides, this brief, preview images (do
 3. `blender/GenerateFrostmaneSet.py`: the Frostmane Wyrm, Frostmane Egg and Frostmane VFX set (5.1–5.3).
 4. `FrostmaneVFX.lua`, `VFXLibrary.lua` and `FrostmaneDemo.lua` (click-to-hatch demo).
 5. `blender/GenerateStarterSet.py`, `StarterSet.lua` and `StarterDemo.lua`: the Wood starter set (5.4, 5.4b).
-6. Docs:
-   - `docs/Guide_AddFrostmaneToRoblox.md` and `docs/Guide_StarterSet.md` (beginner guides);
+6. `blender/GenerateBestiary.py`, `CreatureKit.lua`, `BestiaryData.lua` and `BestiaryDemo.lua`: every other egg and monster (5.4c).
+7. Docs:
+   - `docs/Guide_AddFrostmaneToRoblox.md`, `docs/Guide_StarterSet.md` and `docs/Guide_Bestiary.md` (beginner guides);
    - `docs/FrostmaneSet.md`;
    - `docs/PlayerAnimations.md`.
 
@@ -472,13 +504,13 @@ docs/                                     guides, this brief, preview images (do
    - mushroom health and damage (validating the `ChopImpact` remote that `AnimationConfig` fires), and the 3 stages (1.0 / 0.8 / 0.6 scale);
    - shrink tweens, break, egg and Strength drops, and respawn;
    - remote events for client hit VFX and health bars.
-3. **`EggIncubatorService.lua`** (server): capacity checks, zone egg spawning, plot placement, hatch timers, weighted monster rolls and passive income. Hatching uses the `StartEgg`, `PlayHatch` and `Start<Monster>` pattern.
+3. **`EggIncubatorService.lua`** (server): capacity checks, zone egg spawning, plot placement, hatch timers, weighted monster rolls and passive income. Hatching uses `CreatureKit.RollHatch`, `StartEgg`, `PlayHatch` and `StartMonster`, and the follower bonus uses `CreatureKit.FollowerBonus`.
 4. **`IndexRewardService.lua`** (server): records discoveries and grants one-time Cash rewards.
 5. **`UpgradesService.lua`** (server): Choppers weapon purchases, plus the Upgrades stats (capacity, luck, hitbox range, WalkSpeed).
 6. **`StrengthLevelService.lua`** (server): click gains, levels, rebirth level walls and the level-up lightbeam event.
 7. **`LeaderboardService.lua`** (server): the 3D leaderboards with OrderedDataStore.
 8. **Blender generators** for every remaining asset family, each following section 6 and reusing the Frostmane vocabulary:
-   - the other tiers' monsters, eggs and VFX;
+   - the other tiers' VFX (all eggs and monsters are done, 5.4c);
    - the remaining weapons (smooth style, 4d and 5.4);
    - mushrooms (5.5);
    - dummies (5.7);

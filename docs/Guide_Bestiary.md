@@ -1,6 +1,6 @@
 # Beginner guide: every egg and monster (the Bestiary)
 
-This adds the other **7 eggs and 34 monsters** to your game, in the same blocky, studded style as the Mossbark Egg and Mosscap Toad. The four that already exist (Mossbark Egg, Mosscap Toad, Frostmane Egg, Frostmane Wyrm) come from the [starter](Guide_StarterSet.md) and [Frostmane](Guide_AddFrostmaneToRoblox.md) guides.
+This adds the other **10 eggs and 46 monsters** to your game, in the same blocky, studded style as the Mossbark Egg and Mosscap Toad. The four that already exist (Mossbark Egg, Mosscap Toad, Frostmane Egg, Frostmane Wyrm) come from the [starter](Guide_StarterSet.md) and [Frostmane](Guide_AddFrostmaneToRoblox.md) guides.
 
 | | |
 |---|---|
@@ -13,6 +13,11 @@ This adds the other **7 eggs and 34 monsters** to your game, in the same blocky,
 | **Obsidian** | ![Obsidian family](images/Bestiary_Obsidian.jpg) |
 | **Void** | ![Void family](images/Bestiary_Void.jpg) |
 | **Celestial** (the egg is the Frostmane Egg) | ![Celestial family](images/Bestiary_Celestial.jpg) |
+| **Nebula** | ![Nebula family](images/Bestiary_Nebula.jpg) |
+| **Solar** | ![Solar family](images/Bestiary_Solar.jpg) |
+| **Astral** (the Infinity Wyrm is a 1 in 10,000 Secret) | ![Astral family](images/Bestiary_Astral.jpg) |
+
+The **Nebula, Solar and Astral** stats are placeholders that continue the curve above Celestial (Areas 6–7, hatch times of 8–12 minutes, sell prices of $80B–$10T). Put your real numbers in the `FAMILIES` table (see "Where to change numbers"). The Infinity Wyrm's hatch chance is exactly 1 in 10,000 (`0.0001`).
 
 **How detail follows rarity:**
 - Each egg's most common monster is the plainest: a cute body, a few colours and big eyes.
@@ -40,7 +45,7 @@ This guide is written for someone who's never used Blender or Roblox Studio. If 
    - To build only part of it, use `ONLY = ["Lava"]` (one family) or `ONLY = ["CinderpawPup"]` (one creature).
 
 The files go to `Documents/Bestiary/`:
-- `Family_Fernleaf.glb`, `Family_Toadstool.glb`, `Family_Crystal.glb`, `Family_Geode.glb`, `Family_Lava.glb`, `Family_Obsidian.glb` and `Family_Void.glb`: each holds one egg and its four monsters, side by side.
+- `Family_Fernleaf.glb`, `Family_Toadstool.glb`, `Family_Crystal.glb`, `Family_Geode.glb`, `Family_Lava.glb`, `Family_Obsidian.glb`, `Family_Void.glb`, `Family_Nebula.glb`, `Family_Solar.glb` and `Family_Astral.glb`: each holds one egg and its four monsters, side by side.
 - `Family_Mossbark.glb` and `Family_Celestial.glb`: the three new monsters for each of those eggs, with no egg.
 - `BestiaryVFXMeshes.glb`: shell pieces for the hatch burst.
 - `BestiaryData.lua`: every creature's colours and your game stats. The same file is already in the project at `src/ReplicatedStorage/BestiaryData.lua`.
@@ -86,8 +91,8 @@ If you haven't done those guides, run `GenerateStarterSet.py` and `GenerateFrost
 ## Part 5: Import the models
 Use **File → Import 3D** (in some Studio versions it's on the **Home** or **Avatar** tab). Keep the default settings and click **Import**.
 
-Import all **ten** files from `Documents/Bestiary`, one at a time:
-- the nine `Family_….glb` files;
+Import all **thirteen** files from `Documents/Bestiary`, one at a time:
+- the twelve `Family_….glb` files;
 - `BestiaryVFXMeshes.glb`.
 
 Leave each import directly in **Workspace**, and don't rename the parts inside them. The setup in Part 6 recognises them by their part names, so it doesn't matter what Studio calls the imported models.
@@ -99,7 +104,7 @@ Leave each import directly in **Workspace**, and don't rename the parts inside t
    require(game.ReplicatedStorage.CreatureKit).SetupAll()
    ```
 3. **Output** shows one `Assembled …` line per creature, then a final line:
-   `SetupAll: 7 eggs -> Workspace.Bestiary, 34 monsters -> ServerStorage.Bestiary, shards -> ReplicatedStorage.VFXMeshes`
+   `SetupAll: 10 eggs -> Workspace.Bestiary, 46 monsters -> ServerStorage.Bestiary, shards -> ReplicatedStorage.VFXMeshes`
 
 What it did:
 - split each family into one model per creature, named after it (for example `CinderpawPup`);
@@ -117,7 +122,7 @@ What it did:
 2. The eggs rock on the ground with sparkles, embers or wisps, and a label shows the name, rarity and price.
 3. **Click an egg.** It wobbles, flashes and bursts into shell pieces in its own colours, and a monster from that egg appears next to it. Which monster you get follows your hatch chances, so the common one appears most often.
 4. After 10 seconds the monster goes away and the egg is ready again.
-5. To see the rare ones more often, set `local LUCK = 1` to `3` near the top of `BestiaryDemo`.
+5. To see the rare ones more often, set `local LUCK = 1` to `3` near the top of `BestiaryDemo`. To meet the Infinity Wyrm in a test, try `LUCK = 10000` and click the Astral Egg.
 6. Click **Stop** when you're done.
 
 ---

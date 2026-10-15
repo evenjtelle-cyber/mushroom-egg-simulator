@@ -23,14 +23,14 @@ Act as Executive Roblox Game Designer, Lead Systems Engineer, Technical Artist (
 
 ## 1. Core gameplay & progression
 - **Core loop:** players chop giant mushrooms with axes and swords. Chopping gives **Strength** and drops **Eggs** on the floor, which players collect into their inventory.
-- **Map:** a linear corridor track like "+1 Chop Trees for Treasure" (sloped grass paths, brick borders, river bridges). Zones follow the egg tiers: **Wood → Crystal → Lava → Void → Celestial**. Further along means rarer eggs, stronger mushrooms and stronger monsters.
+- **Map:** a linear corridor track like "+1 Chop Trees for Treasure" (sloped grass paths, brick borders, river bridges). Zones follow the egg tiers: **Wood → Crystal → Lava → Void → Celestial**, then the cosmic **Nebula → Solar → Astral** eggs (Areas 6–7, planned). Further along means rarer eggs, stronger mushrooms and stronger monsters.
 - **Inventory:** base capacity is **3 Eggs**. When full, players can't pick up more until they place eggs in plot incubators or sell them.
 - **Hatching & plots:** players carry eggs to incubators on their private plot. Eggs hatch after a cooldown, or instantly for Robux.
 - **Monsters:** eggs hatch into 3D monsters by weighted luck rolls.
   - Hatched monsters stay on the plot earning **passive Cash/sec**.
   - One monster can be equipped to follow the player, giving Strength and Luck multipliers.
   - A follower also gives a rarity bonus: extra **WalkSpeed** from +1 (Common) to +12 (Secret) and extra **Cash** from +5% to +150%. The table is `CreatureKit.FOLLOWER_BONUS`.
-- **Eggs and monsters:** 9 eggs (Mossbark → Celestial) with 4 monsters each. Every stat (hatch odds, Cash/s, Strength and Luck multipliers, hatch time, sell price, drop areas) is in `ReplicatedStorage.BestiaryData`, generated from the `FAMILIES` table in `blender/GenerateBestiary.py`. Hatch odds are before Luck.
+- **Eggs and monsters:** 12 eggs (Mossbark → Celestial, then the cosmic Nebula, Solar and Astral eggs) with 4 monsters each. The Astral Egg's **Infinity Wyrm** is a 1 in 10,000 Secret. Every stat (hatch odds, Cash/s, Strength and Luck multipliers, hatch time, sell price, drop areas) is in `ReplicatedStorage.BestiaryData`, generated from the `FAMILIES` table in `blender/GenerateBestiary.py`. Hatch odds are before Luck.
 - **Index discovery reward:** unlocking a new monster in the Index grants a one-time Cash reward scaled by rarity.
 - **Strength & levels:**
   - Clicking gives +Strength and +XP.
@@ -152,6 +152,9 @@ These are the shapes to build with. The code is in `blender/GenerateFrostmaneSet
 | Lava | Basalt `#2B2422`, char `#4A3A33` | Ember `#C2461B`, ash `#7A6E68` | Magma Neon `#FF7A1A`, `#FFC24A` | Orange embers, heat haze |
 | Void | Void-stone `#1E1630`, bone `#E6E0D2` | Dusk `#3B2A5E`, plum `#6A3FA0` | Void glass `#9B5CFF`, wisp `#D7B8FF` | Purple wisps, dark smoke |
 | Celestial | Sapphire `#23489E`, navy `#1C3F8F` | Fur white `#EEF5FF`, ice `#A9D3FF`, blue `#4C8FE6`, belly `#CFE6FF` | Crystal `#7FEAFF`, violet `#B48CFF`, eyes/cracks `#9CFFFF`/`#5FF4FF` | Cyan frost, violet accents |
+| Nebula | Space `#1B1446`, nebula `#2E2A7A`, plum `#8E3FB8` | Pink `#FF7AC8`, white `#EEF5FF` | Nebula glass `#FF8FE0`, star glass `#7FEAFF`, stars `#FFF6D6` | Pink and cyan sparkles |
+| Solar | Sun `#FF8A1F`, gold `#FFC93C`, flare red `#E8452C` | Bronze `#B8732A`, band `#7A2E10` | Flare Neon `#FFD84A`, white-hot `#FFF3B0`, flare glass `#FF5A1F` | Golden embers |
+| Astral | Midnight `#120E2E`, indigo `#2A2370`, violet `#4B3AA0` | Starlight `#E9E6FF`, gold `#F3C64A` | Astral glass `#9C8CFF`, moon `#FFF1B8`, stars `#FFF6D6` | Gold-white glints, violet |
 
 A tier's weapon, monster, egg and dummy share palette and motifs. For example, every Celestial asset has frost fur slabs, ice tusks and cyan crystals.
 
@@ -274,7 +277,7 @@ The first four references are **built** and live in the repo. Open their preview
 
 ### 5.4c Bestiary: every other egg and monster ✅ built
 - **Built by:** `GenerateBestiary.py` → one `Family_<Egg>.glb` per egg family, `BestiaryVFXMeshes.glb` (white hatch shards) and `BestiaryData.lua`.
-- **7 eggs and 34 monsters:**
+- **10 eggs and 46 monsters:**
 
   | Egg | Monsters (most common first) |
   |---|---|
@@ -287,12 +290,17 @@ The first four references are **built** and live in the repo. Open their preview
   | Obsidian | Ashen Imp, Slagback Boar, Basalt Wyvern, Molten Behemoth |
   | Void | Voidmote Wisp, Gloomfang Wolf, Nullhorn Beast, Abyssbone Leviathan |
   | Celestial = Frostmane Egg (5.2) | Starfrost Owl, Glacierhorn Elk, Frostroot Wyrmling, Frostmane Wyrm (5.1) |
+  | Nebula | Nebula Jellyfish, Comet Fox, Starlight Pegasus, Galaxy Serpent |
+  | Solar | Sunflare Salamander, Corona Lion, Solarflare Phoenix, Helios Colossus |
+  | Astral | Astral Moth, Eclipse Panther, Cosmos Dragon, Infinity Wyrm (Secret, 1 in 10,000) |
+
+  The Nebula, Solar and Astral stats are placeholders that continue the curve above Celestial (Areas 6–7); replace them in `FAMILIES`.
 
 - **The complexity ladder (4a) in practice:**
   - Each family's most common monster is the plainest: a cute slab body, 2–3 colours, big eyes.
   - Each rarity step adds texture: spots, plates, fur coats, crystals, then Glass/Neon glow parts, wings and horns. Size grows with rarity too (`RARITY_SCALE`).
   - Eggs follow the same rule. Fernleaf is plainer than Mossbark; Obsidian and Void have gold rings, glowing seams and crystal crowns. Every egg sits straight on the ground.
-  - Every asset is 0.8k–4.2k triangles in 4–14 parts.
+  - Every asset is 0.8k–7.8k triangles in 4–18 parts. The Infinity Wyrm is the densest: a star-scaled body coiled into an infinity sign, crystal antlers, a glowing halo and rune bands. In-game its glow cycles through every colour.
 - **Effects (`CreatureKit.lua`, all driven by `BestiaryData`):**
   - Monster idles from the data: `Hop`, `Hover` or `Breathe`.
   - Theme particles: spores, leaves, sparkles, glints, embers, void wisps or frost motes. The particle rate grows with rarity, Epic+ get a light, and Legendary+ get a glow Highlight.

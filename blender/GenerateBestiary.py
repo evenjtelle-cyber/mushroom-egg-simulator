@@ -2,7 +2,7 @@
 GenerateBestiary.py  -  Blender 4.x
 "+1 Chop Mushrooms for Eggs": every egg and monster in the game, blocky stud style
 
-Builds 7 eggs and 34 monsters (the Mossbark Egg, Mosscap Toad, Celestial/
+Builds 10 eggs and 46 monsters (the Mossbark Egg, Mosscap Toad, Celestial/
 Frostmane Egg and Frostmane Wyrm already exist in GenerateStarterSet.py and
 GenerateFrostmaneSet.py):
 
@@ -15,6 +15,9 @@ GenerateFrostmaneSet.py):
   Void Egg          Voidmote Wisp, Gloomfang Wolf, Nullhorn Beast, Abyssbone Leviathan
   (Mossbark Egg)    Twigroot Boar, Barkhorn Stag, Oakheart Golem
   (Celestial Egg)   Starfrost Owl, Glacierhorn Elk, Frostroot Wyrmling
+  Nebula Egg        Nebula Jellyfish, Comet Fox, Starlight Pegasus, Galaxy Serpent
+  Solar Egg         Sunflare Salamander, Corona Lion, Solarflare Phoenix, Helios Colossus
+  Astral Egg        Astral Moth, Eclipse Panther, Cosmos Dragon, Infinity Wyrm (Secret, 1 in 10,000)
 
 Complexity follows rarity (master brief 4a): Commons are plain, cute slab
 bodies, and each rarity step adds texture: plates, patterns, coats, crystals,
@@ -1964,6 +1967,532 @@ def frostroot_wyrmling(c):
 
 
 # ---------------------------------------------------------------------------
+# Cosmic helpers (Nebula, Solar, Astral families)
+# ---------------------------------------------------------------------------
+def halo(c, role, center, radius, count, width=0.3, thickness=0.16, normal=(0, 0, 1), alt_role=None):
+    """Closed ring of tangential slabs: halos, coronas, planetary rings, rims."""
+    n = Vector(normal).normalized()
+    u = n.orthogonal().normalized()
+    v = n.cross(u).normalized()
+    length = 2 * math.pi * radius / count * 1.15
+    for k in range(count):
+        a = 2 * math.pi * k / count
+        radial = u * math.cos(a) + v * math.sin(a)
+        role_k = alt_role if alt_role and k % 2 else role
+        c.b.box(role_k, Vector(center) + radial * radius, (width, length, thickness), basis_from_y(n.cross(radial), n))
+
+
+def rays(c, role, center, radius, count, length, width, normal=(0, 0, 1), alt_role=None, alt_length=None, phase=0.0):
+    """Crystal spikes radiating outward in a plane (sun rays, coronas, flares)."""
+    n = Vector(normal).normalized()
+    u = n.orthogonal().normalized()
+    v = n.cross(u).normalized()
+    for k in range(count):
+        a = phase + 2 * math.pi * k / count
+        radial = u * math.cos(a) + v * math.sin(a)
+        odd = alt_role is not None and k % 2
+        ln = (alt_length or length * 0.6) if k % 2 else length
+        c.b.crystal(alt_role if odd else role, Vector(center) + radial * radius, radial, ln, width * (0.8 if k % 2 else 1.0))
+
+
+def feather_wing(c, roles, root, side, span=2.2, rise=1.4, sweep=0.4, per_row=6, rows=3, feather=(0.45, 1.1),
+                 spar_role=None):
+    """Bird wing: a spar out from the shoulder with rows of feather slabs trailing
+    behind it. roles[0] is the long flight feathers, roles[-1] the short coverts."""
+    r = Vector(root)
+    tip = r + Vector((side * span, sweep, rise))
+    elbow = r + Vector((side * span * 0.45, -0.1, rise * 0.75))
+    pts = bezier(r, elbow, elbow + (tip - elbow) * 0.5, tip, per_row)
+    if spar_role:
+        c.b.chain(spar_role, pts, [0.24 - 0.12 * i / per_row for i in range(per_row)], roll_hint=(0, 0, 1))
+    for row in range(rows):
+        frac = row / max(1, rows - 1)
+        for i in range(per_row):
+            k = i / max(1, per_row - 1)
+            a, b_ = pts[i], pts[i + 1]
+            spar_d = (b_ - a).normalized()
+            drape = Vector((side * 0.45 * k, 1.0, -0.45 - 0.3 * k)).normalized()
+            n = spar_d.cross(drape)
+            if n.length < 1e-3:
+                continue
+            n.normalize()
+            if n.z < 0:
+                n = -n
+            length = feather[1] * (0.6 + 0.7 * k) * (1.0 - 0.5 * frac)
+            fur_plate(c.b, a.lerp(b_, 0.5) + n * 0.07 * row, n, drape, c.rng, feather[0] * (1.0 - 0.2 * frac), length,
+                      roles[min(row, len(roles) - 1)], thickness=0.1, lift=(2, 8), spin=6)
+    return pts
+
+
+def serpent(c, path, radii, roles=("Body", "BodyLight"), belly="Belly", step=0.24):
+    """Thick blocky body along a polyline (wyrms, serpents, salamanders)."""
+    for i in range(len(path) - 1):
+        a, b_ = path[i], path[i + 1]
+        d = b_ - a
+        if d.length < 1e-3:
+            continue
+        r = (radii[i] + radii[i + 1]) / 2
+        mid = (a + b_) / 2
+        rot = basis_from_y(d, (0, 0, 1))
+        ell(c, roles[i % len(roles)], mid, (r, d.length * 0.62, r * 0.9), step=step, rot=rot)
+        if belly:
+            c.b.box(belly, mid + rot @ Vector((0, 0, -r * 0.62)), (r * 1.2, d.length * 1.02, 0.18), rot)
+
+
+# ---------------------------------------------------------------------------
+# Nebula family
+# ---------------------------------------------------------------------------
+def nebula_jellyfish(c):
+    bell = Vector((0, 0, 2.2))
+    ell(c, "BellGlass", bell, (1.15, 0.9, 1.15), step=0.22, vertical=True, profile=DOME)
+    ell(c, "CoreGlow", bell + Vector((0, 0, -0.15)), (0.55, 0.5, 0.55), step=0.2, vertical=True, profile=DOME)
+    dome_dots(c, "StarGlow", bell, 1.15, 0.9, 9, 0.14, fmin=0.15, fmax=0.75)
+    halo(c, "Rim", bell + Vector((0, 0, -0.82)), 1.12, 14, width=0.32, thickness=0.22, alt_role="RimLight")
+    cute_eyes(c, 0.36, -1.15, 1.85, size=0.34)
+    smile(c, -1.16, 1.55, width=0.4)
+    for side in (-1, 1):
+        c.b.box("Cheeks", (side * 0.62, -1.12, 1.6), (0.22, 0.08, 0.12))
+    for k in range(6):
+        a = 2 * math.pi * k / 6 + 0.25
+        base = bell + Vector((math.cos(a) * 0.8, math.sin(a) * 0.8, -0.85))
+        role = "Tentacle" if k % 2 else "TentacleGlow"
+        chain_curve(c, role, base, base + Vector((math.cos(a) * 0.25, math.sin(a) * 0.25, -0.5)),
+                    base + Vector((math.cos(a + 0.8) * 0.15, math.sin(a + 0.8) * 0.15, -1.0)),
+                    base + Vector((math.cos(a - 0.5) * 0.35, math.sin(a - 0.5) * 0.35, -1.55)), 0.2, 0.07, n=6)
+    for k in range(3):
+        a = 2 * math.pi * k / 3
+        p = bell + Vector((math.cos(a) * 0.25, math.sin(a) * 0.25, -0.85))
+        for j in range(3):
+            fur_plate(c.b, p + Vector((0, 0, -0.35 * j)), (math.cos(a), math.sin(a), 0), (0, 0, -1), c.rng, 0.3, 0.5,
+                      "Frill", thickness=0.08, lift=(4, 12))
+    for k in range(4):
+        a = 2 * math.pi * k / 4 + 0.7
+        c.b.box("StarGlow", bell + Vector((math.cos(a) * 1.7, math.sin(a) * 1.7, 0.3 * math.sin(2 * a))), (0.18, 0.18, 0.18),
+                euler_deg(45, 35, k * 20))
+    c.socket("Head", tuple(bell + Vector((0, 0, 1.2))))
+    c.socket("Mouth", (0, -1.15, 1.55))
+    c.socket("Back", tuple(bell + Vector((0, 0.5, 0.7))))
+    c.socket("Feet", (0, 0, 0.3))
+    c.socket("Chest", tuple(bell))
+
+
+def comet_fox(c):
+    g = quadruped(c, L=2.3, W=1.2, H=1.05, leg_h=0.95, leg_r=0.22, head_r=0.66, head_up=0.5, snout=(0.42, 0.55, 0.34),
+                  body="Fur", belly="Belly", leg="Fur", paw="FurDark", snout_role="Belly", nose="Nose",
+                  eyes={"size": 0.3, "iris": "Iris"}, head_role="Fur")
+    ears(c, "Fur", g, "pointy", size=0.72, inner="EarInner", tilt=12)
+    for side in (-1, 1):
+        for k in range(3):
+            fur_plate(c.b, Vector((side * g["head_r"] * 0.85, g["hy"] - 0.1 + k * 0.18, g["hz"] - 0.25)),
+                      (side, -0.3, 0), (side * 0.4, 0.3, -1), c.rng, 0.32, 0.5, "Belly", thickness=0.1)
+    plates_on(c, ["Fur", "FurDark"], g["body_c"], tuple(r + 0.05 for r in g["body_r"]), rows=3, per_row=6,
+              theta=(-1.5, 1.5), tspan=(-0.6, 0.85), size=(0.55, 0.75), thickness=0.12, lift=(5, 14))
+    plates_on(c, ["Belly"], g["body_c"] + Vector((0, -0.75, 0.0)), (g["W"] / 2 + 0.05, 0.4, g["H"] / 2),
+              rows=2, per_row=5, theta=(-1.3, 1.3), tspan=(-0.95, -0.4), size=(0.4, 0.55), thickness=0.1, lift=(8, 18))
+    spots_on(c, "StarGlow", g["body_c"], tuple(r + 0.08 for r in g["body_r"]), 8, 0.13, theta=(-1.2, 1.2))
+    c.b.box("StarGlow", (0, g["front"] + 0.12, g["hz"] + g["head_r"] * 0.55), (0.16, 0.08, 0.16), euler_deg(0, 45, 0))
+    pts = bezier((0, 1.05, g["zb"] + 0.2), (0, 1.7, g["zb"] + 0.4), (0.1, 2.2, g["zb"] + 1.2), (0.15, 2.3, g["zb"] + 2.0), 6)
+    radii = [0.3, 0.42, 0.5, 0.52, 0.48, 0.4]
+    for i in range(len(pts) - 1):
+        d = pts[i + 1] - pts[i]
+        role = "Belly" if i == len(pts) - 2 else ("Fur" if i % 2 else "FurDark")
+        ell(c, role, (pts[i] + pts[i + 1]) / 2, (radii[i], d.length * 0.62, radii[i] * 0.9), step=0.2,
+            rot=basis_from_y(d, (1, 0, 0)))
+    tip = pts[-1] + Vector((0, 0.05, 0.3))
+    ell(c, "CometGlow", tip, (0.58, 0.58, 0.58), step=0.18, vertical=True)
+    for k in range(7):
+        a = -1.2 + k * 0.4
+        c.b.crystal("CometGlass" if k % 2 else "CometGlass2", tip + Vector((math.sin(a) * 0.3, 0.2, 0)),
+                    (math.sin(a) * 0.9, 0.75, 0.7 + 0.3 * math.cos(a)), 1.9 - abs(k - 3) * 0.3, 0.22)
+    for k in range(5):
+        a = -1.0 + k * 0.5
+        c.b.box("StarGlow", tip + Vector((math.sin(a) * 1.5, 1.0, 1.3 + 0.3 * math.cos(a))), (0.15, 0.15, 0.15),
+                euler_deg(45, 35, k * 30))
+    c.socket("Back", tuple(tip))
+
+
+def starlight_pegasus(c):
+    g = quadruped(c, L=2.6, W=1.3, H=1.25, leg_h=1.55, leg_r=0.22, head_r=0.55, head_up=1.15, head_fwd=0.45, neck=0.5,
+                  snout=(0.5, 0.85, 0.5), body="Coat", belly="CoatLight", leg="Coat", paw="Hoof", snout_role="CoatLight",
+                  nose="Nose", eyes={"size": 0.26, "iris": "Iris"}, head_role="Coat")
+    ears(c, "Coat", g, "pointy", size=0.38, inner="CoatLight", tilt=8)
+    c.b.box("StarGlow", (0, g["front"] + 0.1, g["hz"] + g["head_r"] * 0.45), (0.2, 0.1, 0.2), euler_deg(0, 45, 0))
+    a = Vector((0, -g["L"] / 2 + 0.2, g["zb"] + g["H"] * 0.2))
+    b_ = Vector((0, g["hy"] + g["head_r"] * 0.3, g["hz"] - g["head_r"] * 0.3))
+    for k in range(9):
+        p = b_.lerp(a, k / 8) + Vector((0, 0.15, 0.32))
+        side = -1 if k % 2 else 1
+        fur_plate(c.b, p, (side * 0.4, 0.3, 1), (side * 0.6, 0.35, -1), c.rng, 0.42, 0.8,
+                  "ManeGlass" if k % 3 else "ManeGlass2", thickness=0.1, lift=(6, 16))
+    for k in range(3):
+        fur_plate(c.b, Vector((0.12 * (k - 1), g["hy"] - 0.2, g["hz"] + g["head_r"] * 0.85)), (0, -0.5, 1), (0, -1, -0.6),
+                  c.rng, 0.3, 0.5, "ManeGlass", thickness=0.08)
+    for side in (-1, 1):
+        feather_wing(c, ["WingTip", "Wing", "WingLight"], (side * 0.5, -0.45, g["zb"] + 0.45), side, span=2.3, rise=1.9,
+                     sweep=0.7, per_row=6, rows=3, feather=(0.42, 1.05), spar_role="Wing")
+    spots_on(c, "StarGlow", g["body_c"], tuple(r + 0.06 for r in g["body_r"]), 10, 0.13, theta=(-1.5, 1.5))
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            x, y = sx * g["W"] * 0.32, sy * g["L"] * 0.3
+            for k in range(5):
+                ang = 2 * math.pi * k / 5
+                fur_plate(c.b, Vector((x + math.cos(ang) * 0.22, y + math.sin(ang) * 0.22, 0.62)), (math.cos(ang), math.sin(ang), 0),
+                          (0, 0, -1), c.rng, 0.22, 0.4, "CoatLight", thickness=0.08, lift=(4, 10))
+    tail_pts = bezier((0, 1.25, g["zb"] + 0.35), (0, 1.8, g["zb"] + 0.3), (0, 2.1, g["zb"] - 0.4), (0, 2.25, g["zb"] - 1.1), 6)
+    for k, p in enumerate(tail_pts):
+        for side in (-1, 1):
+            fur_plate(c.b, p, (side * 0.3, 0.5, 1), (side * 0.3, 0.6, -1), c.rng, 0.38, 0.75,
+                      "ManeGlass" if (k + side) % 2 else "ManeGlass2", thickness=0.1, lift=(6, 14))
+
+
+def galaxy_serpent(c):
+    path = []
+    turns, n = 1.25, 12
+    a0 = -math.pi / 2 - turns * 2 * math.pi
+    for i in range(n):
+        u = i / (n - 1)
+        a = a0 + u * turns * 2 * math.pi
+        r = 1.9 - 0.9 * u
+        path.append(Vector((math.cos(a) * r, 0.45 + math.sin(a) * r, 0.42 + 0.5 * u)))
+    path += [Vector((0.05, -0.75, 1.55)), Vector((0.0, -0.9, 2.3)), Vector((0.0, -1.0, 2.9))]
+    radii = [0.14, 0.2, 0.27, 0.33, 0.39, 0.44, 0.48, 0.52, 0.55, 0.57, 0.58, 0.58, 0.56, 0.54, 0.52]
+    serpent(c, path, radii, roles=("Body", "BodyLight"))
+    for i in range(1, len(path) - 1):
+        a, b_ = path[i], path[i + 1]
+        d = b_ - a
+        r = (radii[i] + radii[i + 1]) / 2
+        mid = (a + b_) / 2
+        rot = basis_from_y(d, (0, 0, 1))
+        top = mid + rot @ Vector((0, 0, r * 0.85))
+        c.b.crystal("NebulaGlass" if i % 2 else "StarGlass", top, rot @ Vector((0, 0.35, 1)), 0.35 + r * 0.9, 0.1 + r * 0.12)
+        if i % 2 == 0:
+            cracks_on(c, "GalaxyGlow", mid, (r, d.length * 0.6, r * 0.9), 1, segs=3, width=0.09)
+        spots_on(c, "StarGlow", mid, (r * 1.05, d.length * 0.6, r * 0.95), 2, 0.1, theta=(-1.2, 1.2))
+    head = Vector((0, -1.35, 3.25))
+    ell(c, "Body", head, (0.62, 0.8, 0.52), step=0.22)
+    c.b.box("BodyLight", head + Vector((0, -0.75, -0.1)), (0.62, 0.65, 0.4))
+    c.b.box("Belly", head + Vector((0, -0.7, -0.33)), (0.56, 0.75, 0.14))
+    for side in (-1, 1):
+        c.b.box("Nose", head + Vector((side * 0.14, -1.09, 0.0)), (0.09, 0.06, 0.08))
+    cute_eyes(c, 0.32, head.y - 0.7, head.z + 0.2, size=0.3, iris="Iris")
+    for side in (-1, 1):
+        base = head + Vector((side * 0.35, 0.2, 0.35))
+        chain_curve(c, "Horn", base, base + Vector((side * 0.2, 0.35, 0.35)), base + Vector((side * 0.35, 0.7, 0.55)),
+                    base + Vector((side * 0.3, 1.05, 0.5)), 0.17, 0.06, n=5)
+        c.b.box("FinGlass", head + Vector((side * 0.62, 0.3, 0.0)), (0.08, 0.85, 0.7), euler_deg(0, 0, side * 25), taper=(1.0, 0.3))
+    for k, (x, y, z, r) in enumerate(((-2.3, -0.3, 2.3, 0.32), (2.2, 0.9, 2.7, 0.24), (-1.2, 2.2, 3.1, 0.2))):
+        ell(c, "Planet" if k != 1 else "Planet2", (x, y, z), (r, r, r), step=0.12, vertical=True)
+        if k == 0:
+            halo(c, "RingGlass", (x, y, z), r + 0.25, 12, width=0.16, thickness=0.06, normal=(0.3, 0.2, 1))
+    c.socket("Head", tuple(head + Vector((0, 0, 0.9))))
+    c.socket("Mouth", tuple(head + Vector((0, -1.1, -0.2))))
+    c.socket("Back", tuple(path[7] + Vector((0, 0, 0.8))))
+    c.socket("Feet", (0, 0, 0.05))
+    c.socket("Chest", tuple(path[-2]))
+
+
+# ---------------------------------------------------------------------------
+# Solar family
+# ---------------------------------------------------------------------------
+def sunflare_salamander(c):
+    path = bezier((0, -0.95, 0.85), (0, -0.2, 0.8), (0.5, 0.9, 0.6), (0.9, 2.4, 0.3), 9)
+    radii = [0.62, 0.66, 0.66, 0.62, 0.56, 0.48, 0.4, 0.3, 0.2, 0.12]
+    serpent(c, path, radii, roles=("Skin", "SkinLight"), belly="Belly", step=0.22)
+    head = Vector((0, -1.55, 1.15))
+    ell(c, "Skin", head, (0.72, 0.62, 0.55), step=0.2, vertical=True)
+    c.b.box("Belly", head + Vector((0, -0.35, -0.38)), (0.95, 0.5, 0.18))
+    cute_eyes(c, 0.36, head.y - 0.58, head.z + 0.12, size=0.3, iris="Iris")
+    smile(c, head.y - 0.6, head.z - 0.25, width=0.6)
+    for side in (-1, 1):
+        c.b.box("Cheeks", (side * 0.52, head.y - 0.56, head.z - 0.15), (0.2, 0.08, 0.12))
+        for k in range(3):
+            base = head + Vector((side * 0.62, 0.15 + 0.12 * k, 0.25 - 0.22 * k))
+            tip = base + Vector((side * 0.55, 0.3, 0.35 - 0.2 * k))
+            c.b.chain("Gill", [base, tip], [0.12], roll_hint=(0, 0, 1))
+            c.b.crystal("FlameGlow" if k % 2 == 0 else "FlameGlass", tip, (tip - base) + Vector((0, 0, 0.2)), 0.4, 0.1)
+    for i, side in ((1, -1), (1, 1), (5, -1), (5, 1)):
+        hip = path[i] + Vector((side * radii[i] * 0.8, 0, -0.1))
+        knee = hip + Vector((side * 0.45, -0.1, 0.05))
+        foot = knee + Vector((side * 0.12, -0.1, -knee.z + 0.1))
+        c.b.chain("Skin", [hip, knee, foot], [0.26, 0.2], roll_hint=(0, 0, 1))
+        c.b.box("SkinLight", foot + Vector((0, -0.1, 0)), (0.4, 0.45, 0.16))
+        for t in (-1, 0, 1):
+            c.b.box("SkinLight", foot + Vector((t * 0.13, -0.36, -0.02)), (0.09, 0.2, 0.1))
+    for i in range(1, 8):
+        p = path[i] + Vector((0, 0, radii[i] * 0.75))
+        c.b.crystal("FlameGlow" if i % 2 else "FlameGlass", p, (0, 0.35, 1), 0.35 + radii[i] * 0.9, 0.1 + radii[i] * 0.1)
+    spots_on(c, "SunGlow", path[2], (0.62, 0.9, 0.55), 9, 0.16, theta=(-1.3, 1.3))
+    c.b.crystal("FlameGlow", path[-1], path[-1] - path[-2], 0.6, 0.16)
+    c.socket("Head", tuple(head + Vector((0, 0, 0.9))))
+    c.socket("Mouth", tuple(head + Vector((0, -0.62, -0.25))))
+    c.socket("Back", tuple(path[3] + Vector((0, 0, 0.9))))
+    c.socket("Feet", (0, 0, 0.05))
+    c.socket("Chest", tuple(path[1]))
+
+
+def corona_lion(c):
+    g = quadruped(c, L=2.7, W=1.6, H=1.35, leg_h=1.05, leg_r=0.3, head_r=0.72, head_up=0.55, snout=(0.6, 0.5, 0.45),
+                  body="Fur", belly="Belly", leg="Fur", paw="Paw", snout_role="Belly", nose="Nose",
+                  eyes={"size": 0.3, "iris": "Iris"}, head_role="Fur", toes="Paw")
+    ears(c, "Fur", g, "round", size=0.42)
+    head = Vector((0, g["hy"], g["hz"]))
+    axis = Vector((0, 1, 0))
+    for ring_i, (radius, count, roles) in enumerate(((0.75, 12, ("ManeLight", "Mane")), (1.05, 14, ("Mane", "ManeDark")),
+                                                     (1.3, 16, ("ManeDark", "Mane")))):
+        for k in range(count):
+            a = 2 * math.pi * k / count + ring_i * 0.2
+            radial = Vector((math.cos(a), 0, math.sin(a)))
+            anchor = head + radial * radius * 0.75 + axis * (0.2 + 0.15 * ring_i)
+            fur_plate(c.b, anchor, radial + Vector((0, -0.3, 0)), radial + Vector((0, 0.5, 0)), c.rng, 0.45, 0.55 + 0.1 * ring_i,
+                      roles[k % 2], thickness=0.14, lift=(4, 12))
+    rays(c, "CoronaGlow", head + axis * 0.65, 1.45, 16, 0.75, 0.13, normal=axis, alt_role="CoronaGlass", alt_length=0.5)
+    plates_on(c, ["FurLight", "Fur"], g["body_c"], tuple(r + 0.05 for r in g["body_r"]), rows=3, per_row=6,
+              theta=(-1.4, 1.4), tspan=(-0.3, 0.85), size=(0.6, 0.8), thickness=0.12, lift=(4, 10))
+    spots_on(c, "SunGlow", g["body_c"], tuple(r + 0.08 for r in g["body_r"]), 8, 0.15, theta=(-1.2, 1.2))
+    pts = tail(c, "Fur", (0, 1.35, g["zb"] + 0.2), (0, 1.9, g["zb"] + 0.1), (0.2, 2.3, g["zb"] + 0.4),
+               (0.3, 2.4, g["zb"] + 0.9), 0.2, 0.14, n=5)
+    ell(c, "ManeDark", pts[-1], (0.26, 0.3, 0.26), step=0.14)
+    crystals(c, "CoronaGlow", pts[-1] + Vector((0, 0, 0.15)), (0, 0.3, 1), size=0.32, count=3, alt_role="CoronaGlass",
+             alt_chance=0.5)
+
+
+def solarflare_phoenix(c):
+    body = Vector((0, 0.1, 2.0))
+    ell(c, "Flame", body, (0.78, 1.0, 0.72), step=0.24, vertical=True)
+    ell(c, "Belly", body + Vector((0, -0.42, -0.05)), (0.55, 0.8, 0.4), step=0.22, vertical=True)
+    plates_on(c, ["FlameRed", "Flame"], body + Vector((0, 0.15, 0.1)), (0.8, 0.72, 1.0), rows=3, per_row=6,
+              theta=(-1.6, 1.6), tspan=(-0.2, 0.9), size=(0.5, 0.7), thickness=0.12, lift=(4, 12))
+    head = Vector((0, -0.3, 3.3))
+    ell(c, "Flame", head, (0.6, 0.55, 0.55), step=0.2, vertical=True)
+    cute_eyes(c, 0.3, head.y - 0.55, head.z + 0.08, size=0.3, iris="Iris")
+    c.b.box("Beak", head + Vector((0, -0.66, -0.15)), (0.24, 0.32, 0.22), euler_deg(15, 0, 0), taper=(0.3, 0.3))
+    for side in (-1, 1):
+        c.b.box("Cheeks", (side * 0.42, head.y - 0.5, head.z - 0.15), (0.16, 0.08, 0.1))
+    for k in range(5):
+        a = -0.7 + k * 0.35
+        c.b.crystal("FlameGlow" if k % 2 == 0 else "FlameGlass", head + Vector((math.sin(a) * 0.3, 0.2, 0.4)),
+                    (math.sin(a) * 0.7, 0.5, 1), 0.9 - abs(k - 2) * 0.15, 0.13)
+    for side in (-1, 1):
+        pts = feather_wing(c, ["FlameRed", "Flame", "FlameGold"], (side * 0.65, 0.1, 2.55), side, span=2.8, rise=1.5,
+                           sweep=0.5, per_row=7, rows=3, feather=(0.48, 1.15), spar_role="Flame")
+        for p in pts[3:]:
+            c.b.crystal("FlameGlow", p, (side * 0.6, 0.5, 0.4), 0.55, 0.11)
+        c.b.chain("Talon", [Vector((side * 0.3, 0.0, 1.15)), Vector((side * 0.32, -0.1, 0.55))], [0.16], roll_hint=(0, 0, 1))
+        for t in (-1, 0, 1):
+            c.b.box("Talon", (side * 0.32 + t * 0.12, -0.3, 0.5), (0.08, 0.26, 0.1), taper=(0.4, 0.4))
+    for k in range(5):
+        x = (k - 2) * 0.22
+        start = Vector((x * 0.5, 0.75, 1.5))
+        pts = chain_curve(c, "FlameGold" if k % 2 else "FlameRed", start, start + Vector((x, 0.7, -0.3)),
+                          start + Vector((x * 1.8, 1.5, -0.7)), start + Vector((x * 2.4, 2.1 - abs(k - 2) * 0.2, -0.9)),
+                          0.2, 0.12, n=5)
+        ell(c, "FlameGlow", pts[-1], (0.2, 0.26, 0.2), step=0.12)
+    rays(c, "FlameGlass", body + Vector((0, -0.85, 0.25)), 0.32, 8, 0.35, 0.09, normal=(0, -1, 0))
+    c.b.box("SunGlow", body + Vector((0, -0.9, 0.25)), (0.36, 0.1, 0.36), euler_deg(0, 45, 0))
+    c.socket("Head", tuple(head + Vector((0, 0, 1.2))))
+    c.socket("Mouth", tuple(head + Vector((0, -0.8, -0.2))))
+    c.socket("Back", (0, 0.6, 2.8))
+    c.socket("Feet", (0, 0, 0.4))
+    c.socket("Chest", tuple(body + Vector((0, -0.6, 0.2))))
+
+
+def helios_colossus(c):
+    g = biped(c, torso=(1.9, 1.2, 2.0), hip_z=1.3, leg_r=0.45, leg_gap=0.45, arm_r=0.4, head_r=0.62, head_up=0.15,
+              body="Bronze", limb="Bronze", hand="Gold", foot="Gold", head_role="Gold", eyes={"glow": True}, mouth=False,
+              fist=0.5)
+    tz, hz = g["tz"], g["hz"]
+    slats_around(c, ["BronzeLight", "Bronze"], (0, 0, tz), 0.98, 0.62, g["hip_z"] + 0.1, g["hip_z"] + 1.9, 14,
+                 width=0.42, depth=0.16)
+    chest = Vector((0, -0.66, tz + 0.25))
+    ell(c, "CoreGlow", chest, (0.42, 0.42, 0.18), step=0.16, vertical=True)
+    halo(c, "Gold", chest + Vector((0, -0.05, 0)), 0.55, 12, width=0.18, thickness=0.14, normal=(0, -1, 0))
+    rays(c, "SunGlass", chest + Vector((0, -0.08, 0)), 0.62, 8, 0.45, 0.1, normal=(0, -1, 0), phase=0.39)
+    c.b.box("Gold", (0, -0.05, g["hip_z"] + 0.15), (2.0, 1.3, 0.3))
+    for side in (-1, 1):
+        sh = Vector((side * 1.15, 0, g["hip_z"] + 1.75))
+        ell(c, "Gold", sh, (0.55, 0.45, 0.5), step=0.18, vertical=True)
+        for k in range(3):
+            fur_plate(c.b, sh + Vector((side * 0.3, -0.2 + 0.25 * k, 0.1)), (side, 0, 0.6), (side * 0.4, 0, -1), c.rng,
+                      0.45, 0.6, "BronzeLight", thickness=0.14, lift=(2, 6))
+        c.b.crystal("SunGlass", sh + Vector((side * 0.15, 0, 0.35)), (side * 0.5, 0, 1), 0.7, 0.16)
+    cracks_on(c, "SunGlow", g["body_c"], (1.0, 0.64, 1.02), 5, segs=4, width=0.11, theta=(-2.4, 2.4))
+    crown = Vector((0, -0.12, hz + 0.55))
+    for k in range(5):
+        a = -0.8 + k * 0.4
+        c.b.crystal("Gold", crown + Vector((math.sin(a) * 0.45, 0, 0)), (math.sin(a) * 0.6, 0, 1), 0.55 - abs(k - 2) * 0.1, 0.1)
+    back = Vector((0, 0.55, hz + 0.1))
+    halo(c, "HaloGlow", back, 1.2, 20, width=0.22, thickness=0.14, normal=(0, 1, 0))
+    rays(c, "SunGlass", back, 1.3, 12, 0.8, 0.14, normal=(0, 1, 0), alt_role="HaloGlow", alt_length=0.45)
+    c.socket("Back", tuple(back))
+
+
+# ---------------------------------------------------------------------------
+# Astral family
+# ---------------------------------------------------------------------------
+def astral_moth(c):
+    ell(c, "Body", (0, -0.2, 1.75), (0.6, 0.6, 0.6), step=0.22, vertical=True)
+    ell(c, "Body", (0, 0.75, 1.5), (0.5, 0.8, 0.46), step=0.24)
+    for y in (0.4, 0.8, 1.2):
+        c.b.box("Fuzz", (0, y, 1.5), (1.0, 0.12, 0.92))
+    ell(c, "Fuzz", (0, -0.8, 1.9), (0.48, 0.42, 0.46), step=0.18, vertical=True)
+    cute_eyes(c, 0.22, -1.22, 1.98, size=0.3, iris="Iris")
+    for side in (-1, 1):
+        c.b.box("Cheeks", (side * 0.34, -1.2, 1.72), (0.14, 0.06, 0.09))
+    for k in range(10):
+        a = 2 * math.pi * k / 10
+        fur_plate(c.b, Vector((math.cos(a) * 0.5, -0.45 + math.sin(a) * 0.12, 1.8 + math.sin(a) * 0.4)),
+                  (math.cos(a), -0.3, math.sin(a)), (0, 0.4, -1), c.rng, 0.38, 0.5, "Fuzz", thickness=0.1)
+    for side in (-1, 1):
+        base = Vector((side * 0.14, -1.0, 2.25))
+        tip = base + Vector((side * 0.55, -0.4, 0.85))
+        c.b.chain("Antenna", [base, (base + tip) / 2, tip], [0.06, 0.06], roll_hint=(0, 0, 1))
+        for k in range(5):
+            p = base.lerp(tip, 0.25 + k * 0.15)
+            c.b.box("Antenna", p + Vector((side * 0.09, 0, 0)), (0.2, 0.04, 0.04), euler_deg(0, 0, side * 20))
+        c.b.box("StarGlow", tip, (0.16, 0.16, 0.16), euler_deg(45, 35, 0))
+        root = Vector((side * 0.45, -0.15, 1.9))
+        d = Vector((side * 1.0, -0.15, 0.55)).normalized()
+        flat_wing(c, "WingGlass", "WingVein", root, d, 2.2, 1.5, lift=side * 10, segs=6, spot="MoonGlow")
+        flat_wing(c, "WingGlass2", "WingVein", Vector((side * 0.4, 0.35, 1.6)), (side * 1.0, 0.55, -0.25), 1.6, 1.1,
+                  lift=side * 10, segs=5)
+        for k in range(4):
+            p = root + d * (0.5 + 0.45 * k) + Vector((0, 0, 0.12 * (k % 2) + 0.04))
+            c.b.box("StarGlow", p, (0.12, 0.12, 0.12), euler_deg(45, 35, k * 25))
+        for y in (-0.35, 0.05, 0.45):
+            c.b.chain("Antenna", [Vector((side * 0.32, y, 1.35)), Vector((side * 0.55, y - 0.1, 0.95))], [0.06], roll_hint=(0, 0, 1))
+    crystals(c, "AstralGlass", (0, 0.2, 2.25), (0, 0.4, 1), size=0.22, count=3, alt_role="StarGlass", alt_chance=0.4)
+    c.socket("Head", (0, -0.8, 2.6))
+    c.socket("Mouth", (0, -1.25, 1.8))
+    c.socket("Back", (0, 0.2, 2.3))
+    c.socket("Feet", (0, 0, 0.9))
+    c.socket("Chest", (0, -0.65, 1.6))
+
+
+def eclipse_panther(c):
+    g = quadruped(c, L=2.8, W=1.25, H=1.05, leg_h=1.05, leg_r=0.24, head_r=0.6, head_up=0.45, snout=(0.45, 0.45, 0.32),
+                  body="Fur", belly="FurLight", leg="Fur", paw="FurDark", snout_role="FurLight", nose="Nose",
+                  eyes={"size": 0.28, "iris": "Iris"}, head_role="Fur")
+    ears(c, "Fur", g, "pointy", size=0.45, inner="FurLight", tilt=18)
+    plates_on(c, ["FurDark", "Fur"], g["body_c"], tuple(r + 0.05 for r in g["body_r"]), rows=4, per_row=6,
+              theta=(-1.4, 1.4), size=(0.55, 0.75), thickness=0.12, lift=(3, 9))
+    for side in (-1, 1):
+        mid = Vector((side * (g["W"] / 2 + 0.1), -0.55, g["zb"] + 0.05))
+        for k in range(5):
+            a = -1.0 + k * 0.5
+            c.b.box("MoonGlow", mid + Vector((0, math.sin(a) * 0.3, math.cos(a) * 0.3)), (0.08, 0.14, 0.14))
+        crystals(c, "AstralGlass", Vector((side * 0.45, -0.75, g["zb"] + 0.45)), (side * 0.5, 0.1, 1), size=0.28, count=3,
+                 alt_role="StarGlass", alt_chance=0.4)
+    spots_on(c, "StarGlow", g["body_c"], tuple(r + 0.08 for r in g["body_r"]), 10, 0.11, theta=(-1.3, 1.3))
+    c.b.box("MoonGlow", (0, g["front"] + 0.1, g["hz"] + g["head_r"] * 0.5), (0.18, 0.08, 0.18), euler_deg(0, 45, 0))
+    eclipse = Vector((0, 0.85, g["zb"] + g["H"] / 2 + 1.25))
+    ell(c, "Eclipse", eclipse, (0.75, 0.1, 0.75), step=0.1)
+    halo(c, "CoronaGlow", eclipse + Vector((0, 0.04, 0)), 0.86, 18, width=0.18, thickness=0.14, normal=(0, 1, 0))
+    rays(c, "CoronaGlass", eclipse + Vector((0, 0.06, 0)), 0.95, 12, 0.55, 0.1, normal=(0, 1, 0), alt_length=0.32)
+    pts = tail(c, "Fur", (0, 1.4, g["zb"] + 0.2), (0, 2.0, g["zb"] + 0.1), (0.4, 2.5, g["zb"] + 0.5),
+               (0.2, 2.6, g["zb"] + 1.1), 0.22, 0.14, n=6)
+    for k in range(6):
+        a = -1.3 + k * 0.52
+        c.b.box("MoonGlow", pts[-1] + Vector((math.sin(a) * 0.3, 0, 0.15 + math.cos(a) * 0.3)), (0.14, 0.14, 0.14))
+
+
+def cosmos_dragon(c):
+    g = quadruped(c, L=3.0, W=1.8, H=1.6, leg_h=1.0, leg_r=0.36, head_r=0.75, head_up=0.95, head_fwd=0.35, neck=0.55,
+                  snout=(0.6, 0.9, 0.5), body="Scale", belly="Belly", leg="Scale", paw="ScaleDark", snout_role="Scale",
+                  nose="ScaleDark", eyes={"size": 0.32, "iris": "Iris"}, head_role="Scale", toes="Horn")
+    for side in (-1, 1):
+        base = Vector((side * 0.42, g["hy"] + 0.2, g["hz"] + 0.55))
+        chain_curve(c, "Horn", base, base + Vector((side * 0.15, 0.35, 0.4)), base + Vector((side * 0.3, 0.8, 0.6)),
+                    base + Vector((side * 0.35, 1.2, 0.5)), 0.22, 0.07, n=5)
+        base2 = Vector((side * 0.6, g["hy"] + 0.3, g["hz"] + 0.2))
+        chain_curve(c, "Horn", base2, base2 + Vector((side * 0.25, 0.25, 0.1)), base2 + Vector((side * 0.4, 0.55, 0.15)),
+                    base2 + Vector((side * 0.45, 0.75, 0.05)), 0.14, 0.05, n=4)
+        c.b.box("Cheeks", (side * 0.45, g["front"] + 0.1, g["hz"] - 0.2), (0.2, 0.08, 0.12))
+    plates_on(c, ["ScaleLight", "ScaleDark"], g["body_c"], tuple(r + 0.06 for r in g["body_r"]), rows=4, per_row=7,
+              theta=(-1.6, 1.6), size=(0.7, 0.85), thickness=0.16, lift=(2, 8))
+    spikes_on(c, "StarGlass", g["body_c"], g["body_r"], 9, 0.85, 0.2, theta=(-0.15, 0.15), tspan=(-0.85, 0.85), crystal=True)
+    spikes_on(c, "NebulaGlass", g["body_c"], g["body_r"], 5, 0.6, 0.16, theta=(-0.4, 0.4), tspan=(-0.6, 0.7), crystal=True)
+    cracks_on(c, "GalaxyGlow", g["body_c"], tuple(r + 0.08 for r in g["body_r"]), 5, segs=4, width=0.11, theta=(-1.7, 1.7))
+    spots_on(c, "StarGlow", g["body_c"], tuple(r + 0.12 for r in g["body_r"]), 12, 0.12, theta=(-1.5, 1.5))
+    wings(c, "ScaleDark", "WingGlass", (0.7, -0.45, g["zb"] + 0.7), span=3.2, height=2.0, back=0.9, fingers=4)
+    pts = tail(c, "Scale", (0, 1.5, g["zb"]), (0, 2.4, g["zb"] - 0.3), (0.6, 3.1, g["zb"] - 0.7),
+               (1.1, 3.4, g["zb"] - 0.8), 0.42, 0.14, n=7)
+    crystals(c, "StarGlass", pts[-1], pts[-1] - pts[-2], size=0.45, count=3, alt_role="NebulaGlass", alt_chance=0.5)
+    ell(c, "Planet", (-1.9, 0.6, g["zb"] + 2.2), (0.28, 0.28, 0.28), step=0.12, vertical=True)
+    halo(c, "RingGlass", (-1.9, 0.6, g["zb"] + 2.2), 0.52, 12, width=0.15, thickness=0.06, normal=(0.3, 0.2, 1))
+
+
+def infinity_wyrm(c):
+    """The Secret (1 in 10,000): a star-scaled wyrm whose body forms the
+    infinity sign, rising into a crowned head under a halo."""
+    A = 2.7
+    path = []
+    t0, t1, n = math.pi / 2 + 0.34, 2.5 * math.pi - 0.28, 28
+    for i in range(n):
+        t = t0 + (t1 - t0) * i / (n - 1)
+        s, co = math.sin(t), math.cos(t)
+        k = 1 + s * s
+        y = A * s * co / k * 1.75
+        # The loop tilts up at the back so the infinity sign faces the viewer.
+        path.append(Vector((A * co / k, 0.45 + y, 1.3 + 0.5 * s + 0.32 * y)))
+    neck_base = path[-1]
+    head = Vector((0, -0.85, 3.55))
+    path += bezier(neck_base, neck_base + Vector((0, -0.2, 0.7)), head + Vector((0, 0.7, -1.0)), head + Vector((0, 0.45, -0.25)), 5)[1:]
+    m = len(path)
+    radii = [0.12 + 0.3 * min(1.0, i / 12) + 0.08 * max(0, i - 22) / 10 for i in range(m)]
+    serpent(c, path, radii, roles=("Scale", "ScaleLight"))
+    for i in range(2, m - 1):
+        a, b_ = path[i], path[i + 1]
+        d = b_ - a
+        if d.length < 1e-3:
+            continue
+        r = (radii[i] + radii[i + 1]) / 2
+        mid = (a + b_) / 2
+        rot = basis_from_y(d, (0, 0, 1))
+        top = mid + rot @ Vector((0, 0, r * 0.85))
+        if i % 2 == 0:
+            c.b.crystal("CrystalGlass" if i % 4 else "VioletGlass", top, rot @ Vector((0, 0.3, 1)), 0.25 + r * 0.9, 0.08 + r * 0.12)
+        if i % 4 == 0:
+            ell(c, "RuneGlow", mid, (r * 1.08, 0.08, r * 1.0), step=0.08, rot=rot)
+        spots_on(c, "StarGlow", mid, (r * 1.05, d.length * 0.6, r * 0.95), 1, 0.1, theta=(-1.2, 1.2))
+    for k in range(7):
+        p = path[m - 2 - k] + Vector((0, 0.25, 0.3))
+        for side in (-1, 1):
+            fur_plate(c.b, p, (side * 0.5, 0.3, 1), (side * 0.6, 0.4, -1), c.rng, 0.4, 0.75,
+                      "Mane" if (k + side) % 2 else "ManeLight", thickness=0.12, lift=(6, 16))
+    ell(c, "Scale", head, (0.75, 0.9, 0.62), step=0.22)
+    c.b.box("ScaleLight", head + Vector((0, -0.85, -0.12)), (0.72, 0.7, 0.45))
+    c.b.box("Belly", head + Vector((0, -0.8, -0.38)), (0.66, 0.78, 0.16))
+    for side in (-1, 1):
+        c.b.box("Nose", head + Vector((side * 0.15, -1.21, -0.02)), (0.1, 0.06, 0.09))
+        c.b.box("Cheeks", head + Vector((side * 0.5, -0.82, -0.22)), (0.2, 0.08, 0.12))
+        base = head + Vector((side * 0.38, 0.2, 0.45))
+        pts = chain_curve(c, "Gold", base, base + Vector((side * 0.3, 0.2, 0.5)), base + Vector((side * 0.6, 0.45, 0.95)),
+                          base + Vector((side * 0.7, 0.75, 1.25)), 0.18, 0.08, n=6)
+        for j in (2, 4):
+            tip = pts[j] + Vector((side * 0.25, -0.3, 0.4))
+            c.b.chain("Gold", [pts[j], tip], [0.09], roll_hint=(0, 0, 1), taper_last=(0.5, 0.5))
+            c.b.crystal("CrystalGlass", tip, (side * 0.2, -0.3, 1), 0.4, 0.09)
+        c.b.crystal("VioletGlass", pts[-1], (side * 0.3, 0.2, 1), 0.55, 0.12)
+        c.b.box("FinGlass", head + Vector((side * 0.72, 0.3, 0.05)), (0.08, 0.85, 0.75), euler_deg(0, 0, side * 25), taper=(1.0, 0.3))
+    cute_eyes(c, 0.36, head.y - 0.82, head.z + 0.18, size=0.34, iris="Iris")
+    for k, x in enumerate((-0.16, 0.16)):
+        c.b.box("RuneGlow", head + Vector((x, -0.8, 0.5)), (0.26, 0.08, 0.18), euler_deg(0, 30 if k else -30, 0))
+    halo(c, "HaloGlow", head + Vector((0, 0.75, 1.2)), 0.8, 16, width=0.2, thickness=0.12, normal=(0, 1, 0.45))
+    wings(c, "Gold", "WingGlass", (0.5, -0.1, 2.3), span=2.2, height=1.4, back=0.6, fingers=3, raise_deg=35)
+    tail_tip = path[0]
+    crystals(c, "CrystalGlass", tail_tip, tail_tip - path[1], size=0.32, count=3, alt_role="VioletGlass", alt_chance=0.5)
+    for k in range(6):
+        a = 2 * math.pi * k / 6 + 0.4
+        c.b.box("StarGlow", (math.cos(a) * 3.4, 0.45 + math.sin(a) * 1.9, 1.5 + 0.4 * math.sin(2 * a)), (0.2, 0.2, 0.2),
+                euler_deg(45, 35, k * 20))
+    c.socket("Head", tuple(head + Vector((0, 0, 1.9))))
+    c.socket("Mouth", tuple(head + Vector((0, -1.2, -0.25))))
+    c.socket("Back", tuple(path[m - 6] + Vector((0, 0.3, 0.8))))
+    c.socket("Feet", (0, 0, 0.1))
+    c.socket("Chest", tuple(path[m - 3]))
+
+
+# ---------------------------------------------------------------------------
 # Eggs (sit on the ground; decoration grows with rarity)
 # ---------------------------------------------------------------------------
 def egg_body(c, height, R, pattern, layers=11):
@@ -2138,6 +2667,65 @@ def void_egg(c):
 # ---------------------------------------------------------------------------
 # The bestiary: stats from the game config, palettes, builders, idle style
 # ---------------------------------------------------------------------------
+def nebula_egg(c):
+    h = 5.2
+    rad = egg_body(c, h, 1.85, lambda i, t: ("Space", "Nebula", "Space", "NebulaPink")[i % 4])
+    prev = None
+    for j in range(24):
+        u = j / 23
+        p, n = egg_point(rad, h, 0.12 + 0.76 * u, u * 4 * math.pi, 0.04)
+        if prev is not None:
+            d = p - prev
+            c.b.box("NebulaGlass", (p + prev) / 2, (0.34, d.length * 1.15, 0.12), basis_from_y(d, n))
+        prev = p
+    egg_spots(c, "StarGlow", rad, h, 16, 0.14, out=0.06)
+    crystals(c, "NebulaGlass", (0, 0, h - 0.1), (0, 0, 1), size=0.75, count=5, alt_role="StarGlass", alt_chance=0.4)
+    for k in range(5):
+        p, n = egg_point(rad, h, 0.5 + 0.1 * math.sin(k * 1.7), 2 * math.pi * k / 5 + 0.3, 0.7)
+        c.b.box("StarGlow", p, (0.22, 0.22, 0.22), euler_deg(45, 35, k * 20))
+
+
+def solar_egg(c):
+    h = 5.2
+    rad = egg_body(c, h, 1.85, lambda i, t: ("Sun", "SunLight", "Sun", "SunDeep")[i % 4])
+    egg_cracks(c, "SunGlow", rad, h, 6, segs=6, width=0.16)
+    for t in (0.28, 0.72):
+        egg_ring(c, "Band", rad, h, t, 18, size=(0.6, 0.26, 0.16), out=0.04)
+    rays(c, "FlareGlow", (0, 0, h * 0.5), 1.75, 12, 0.9, 0.16, alt_role="FlareGlass", alt_length=0.55)
+    crystals(c, "FlareGlow", (0, 0, h - 0.1), (0, 0, 1), size=0.7, count=5, alt_role="FlareGlass", alt_chance=0.5)
+    halo(c, "Band", (0, 0, h - 0.35), 0.75, 10, width=0.22, thickness=0.18)
+
+
+def astral_egg(c):
+    h = 5.4
+    rad = egg_body(c, h, 1.9, lambda i, t: ("Midnight", "Indigo", "Midnight", "Violet")[i % 4])
+    egg_ring(c, "Gold", rad, h, 0.1, 16, size=(0.55, 0.22, 0.14), out=0.04)
+    # Constellations: stars joined by thin gold lines.
+    for k in range(4):
+        a, t = 2 * math.pi * k / 4 + 0.9, 0.3 + 0.18 * (k % 2)
+        prev = None
+        for _ in range(4):
+            p, n = egg_point(rad, h, t, a, 0.05)
+            c.b.box("StarGlow", p + n * 0.03, (0.22, 0.22, 0.1), basis(n, (0, 0, 1)) @ euler_deg(0, 0, 45))
+            if prev is not None:
+                d = p - prev
+                c.b.box("Gold", (p + prev) / 2, (0.06, d.length, 0.05), basis_from_y(d, n))
+            prev = p
+            a += c.rng.uniform(0.18, 0.32)
+            t += c.rng.uniform(-0.1, 0.14)
+    # Crescent moon on the front.
+    for j in range(8):
+        ang = -1.45 + j * 0.415
+        p, n = egg_point(rad, h, 0.58 + 0.13 * math.sin(ang), -math.pi / 2 + 0.3 * math.cos(ang), 0.05)
+        size = 0.34 * (0.55 + 0.45 * math.cos(ang))
+        c.b.box("MoonGlow", p, (size, size, 0.12), basis(n, (0, 0, 1)))
+    halo(c, "RingGlass", (0, 0, h * 0.42), 2.5, 30, width=0.55, thickness=0.18, normal=(0.28, 0.12, 1), alt_role="RingGlass2")
+    crystals(c, "AstralGlass", (0, 0, h - 0.1), (0, 0, 1), size=0.65, count=4, alt_role="StarGlass", alt_chance=0.4)
+    for k in range(4):
+        a = math.pi / 2 * k
+        c.b.crystal("StarGlass", (0, 0, h + 1.55), (math.cos(a), math.sin(a) * 0.3, math.sin(a) * 0.95), 0.4, 0.09)
+
+
 def M(asset, display, rarity, chance, cash, strength, luck, builder, colors, idle="Breathe", scale=None):
     spec = dict(kind="Monster", asset=asset, display=display, rarity=rarity, builder=builder, colors=colors, idle=idle,
                 attributes=dict(MonsterName=display, Rarity=rarity, HatchChance=chance, CashPerSecond=cash,
@@ -2289,6 +2877,67 @@ FAMILIES = [
         M("FrostrootWyrmling", "Frostroot Wyrmling", "Mythic", 0.10, 160000000, 40.0, 6.0, frostroot_wyrmling,
           dict(Scale="#2E5FB8", ScaleLight="#4C8FE6", Belly="#CFE6FF", Root="#8A5A3B", WingGlass="#8FDDFF",
                CrystalGlass="#7FEAFF", CrystalViolet="#B48CFF", Iris="#5FD8FF", FurWhite="#EEF5FF")),
+    ]),    # The cosmic eggs beyond Celestial. Stats are placeholders that continue the
+    # curve above Celestial; replace them with your own numbers.
+    dict(family="Nebula", theme="Nebula", egg=E("NebulaEgg", "Nebula Egg", "Mythic", 480, 80e9, "6", nebula_egg,
+                                                dict(Space="#1B1446", Nebula="#2E2A7A", NebulaPink="#8E3FB8",
+                                                     NebulaGlass="#FF8FE0", StarGlow="#FFF6D6", StarGlass="#7FEAFF")),
+         monsters=[
+        M("NebulaJellyfish", "Nebula Jellyfish", "Epic", 0.60, 300e6, 50.0, 7.0, nebula_jellyfish,
+          dict(BellGlass="#FF8FE0", CoreGlow="#FFE1F6", StarGlow="#FFF6D6", Rim="#8E3FB8", RimLight="#C04CD8",
+               Tentacle="#C04CD8", TentacleGlow="#5FE3FF", Frill="#FF7AC8"), idle="Hover"),
+        M("CometFox", "Comet Fox", "Legendary", 0.30, 800e6, 62.0, 8.5, comet_fox,
+          dict(Fur="#2E2A7A", FurDark="#1B1446", Belly="#EEF5FF", Nose="#1B1446", Iris="#5FE3FF", EarInner="#FF7AC8",
+               StarGlow="#FFF6D6", CometGlow="#BFF6FF", CometGlass="#7FEAFF", CometGlass2="#FF8FE0"), idle="Hop"),
+        M("StarlightPegasus", "Starlight Pegasus", "Mythic", 0.09, 2e9, 80.0, 10.5, starlight_pegasus,
+          dict(Coat="#EEF5FF", CoatLight="#CFE6FF", Hoof="#F3C64A", Nose="#8E7FB8", Iris="#6B4FD8", StarGlow="#FFE27A",
+               ManeGlass="#FF8FE0", ManeGlass2="#7FEAFF", Wing="#EEF5FF", WingLight="#FFFFFF", WingTip="#B9D8FF")),
+        M("GalaxySerpent", "Galaxy Serpent", "Divine", 0.01, 6e9, 105.0, 14.0, galaxy_serpent,
+          dict(Body="#1B1446", BodyLight="#2E2A7A", Belly="#8E3FB8", NebulaGlass="#FF8FE0", StarGlass="#7FEAFF",
+               GalaxyGlow="#FF7AC8", StarGlow="#FFF6D6", Nose="#0E0A24", Iris="#FF8FE0", Horn="#F3C64A",
+               FinGlass="#C04CD8", Planet="#FF9F5A", Planet2="#5FE3FF", RingGlass="#FFE1B0")),
+    ]),
+    dict(family="Solar", theme="Solar", egg=E("SolarEgg", "Solar Egg", "Divine", 600, 900e9, "6-7", solar_egg,
+                                              dict(Sun="#FF8A1F", SunLight="#FFC93C", SunDeep="#E8452C", SunGlow="#FFF3B0",
+                                                   Band="#7A2E10", FlareGlow="#FFD84A", FlareGlass="#FF7A1A")),
+         monsters=[
+        M("SunflareSalamander", "Sunflare Salamander", "Legendary", 0.60, 4e9, 90.0, 12.0, sunflare_salamander,
+          dict(Skin="#FF8A1F", SkinLight="#FFB347", Belly="#FFE7A8", Iris="#7A2E10", Gill="#E8452C", FlameGlow="#FFD84A",
+               FlameGlass="#FF5A1F", SunGlow="#FFF3B0"), idle="Hop"),
+        M("CoronaLion", "Corona Lion", "Mythic", 0.30, 10e9, 115.0, 15.0, corona_lion,
+          dict(Fur="#F3B04A", FurLight="#FFD27A", Belly="#FFF0C8", Paw="#B8732A", Nose="#5A2A12", Iris="#B8460F",
+               Mane="#E8452C", ManeLight="#FF8A1F", ManeDark="#A8301C", CoronaGlow="#FFE45A", CoronaGlass="#FF9A2A",
+               SunGlow="#FFF3B0")),
+        M("SolarflarePhoenix", "Solarflare Phoenix", "Divine", 0.09, 28e9, 145.0, 19.0, solarflare_phoenix,
+          dict(Flame="#FF7A1A", FlameRed="#E8452C", FlameGold="#FFC93C", Belly="#FFE7A8", Iris="#7A2E10", Beak="#FFE27A",
+               FlameGlow="#FFE45A", FlameGlass="#FF5A1F", Talon="#7A2E10", SunGlow="#FFF3B0"), idle="Hover"),
+        M("HeliosColossus", "Helios Colossus", "Divine", 0.01, 80e9, 190.0, 25.0, helios_colossus,
+          dict(Bronze="#B8732A", BronzeLight="#D99A4A", Gold="#FFC93C", EyeGlow="#FFF3B0", CoreGlow="#FFF3B0",
+               SunGlass="#FFB020", SunGlow="#FFE45A", HaloGlow="#FFD84A")),
+    ]),
+    dict(family="Astral", theme="Astral", egg=E("AstralEgg", "Astral Egg", "Divine", 720, 10e12, "7", astral_egg,
+                                                dict(Midnight="#120E2E", Indigo="#2A2370", Violet="#4B3AA0",
+                                                     StarGlow="#FFF6D6", Gold="#F3C64A", MoonGlow="#FFF1B8",
+                                                     RingGlass="#B9A8FF", RingGlass2="#7FEAFF", AstralGlass="#9C8CFF",
+                                                     StarGlass="#E9E6FF")),
+         monsters=[
+        M("AstralMoth", "Astral Moth", "Mythic", 0.65, 60e9, 160.0, 20.0, astral_moth,
+          dict(Body="#2A2370", Fuzz="#E9E6FF", Iris="#2A2370", Antenna="#120E2E", StarGlow="#FFF6D6", WingGlass="#9C8CFF",
+               WingGlass2="#7FEAFF", WingVein="#4B3AA0", MoonGlow="#FFF1B8", AstralGlass="#9C8CFF", StarGlass="#E9E6FF"),
+          idle="Hover"),
+        M("EclipsePanther", "Eclipse Panther", "Divine", 0.30, 160e9, 210.0, 26.0, eclipse_panther,
+          dict(Fur="#16122E", FurLight="#2A2370", FurDark="#0A0A14", Nose="#4B3AA0", Iris="#F3C64A", MoonGlow="#FFF1B8",
+               AstralGlass="#9C8CFF", StarGlass="#E9E6FF", StarGlow="#FFF6D6", Eclipse="#05050A", CoronaGlow="#FFE7A0",
+               CoronaGlass="#F3C64A")),
+        M("CosmosDragon", "Cosmos Dragon", "Divine", 0.0499, 450e9, 280.0, 34.0, cosmos_dragon,
+          dict(Scale="#2A2370", ScaleLight="#4B3AA0", ScaleDark="#120E2E", Belly="#B9A8FF", Iris="#7FEAFF", Horn="#F3C64A",
+               Cheeks="#FF8FE0", StarGlass="#E9E6FF", NebulaGlass="#FF8FE0", GalaxyGlow="#B98CFF", StarGlow="#FFF6D6",
+               WingGlass="#6B4FD8", Planet="#5FE3FF", RingGlass="#FFE1B0")),
+        # The Secret: 1 in 10,000 before Luck.
+        M("InfinityWyrm", "Infinity Wyrm", "Secret", 0.0001, 2.5e12, 500.0, 60.0, infinity_wyrm,
+          dict(Scale="#EEF0FF", ScaleLight="#AEB9FF", Belly="#FFE7A8", CrystalGlass="#9CFFFF", VioletGlass="#C9A0FF",
+               RuneGlow="#FFD84A", StarGlow="#FFF6D6", Mane="#FFFFFF", ManeLight="#FFE7A8", Nose="#6B4FD8", Gold="#F3C64A",
+               FinGlass="#B9A8FF", Iris="#6B4FD8", HaloGlow="#FFE45A", WingGlass="#9CFFFF"), idle="Hover"),
     ]),
 ]
 

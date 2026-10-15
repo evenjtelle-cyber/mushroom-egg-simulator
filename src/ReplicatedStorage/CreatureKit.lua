@@ -96,6 +96,12 @@ CreatureKit.THEMES = {
 		Colors = { Color3.fromRGB(220, 150, 255), Color3.fromRGB(90, 30, 170) }, Rise = 0.6 },
 	Celestial = { Light = Color3.fromRGB(170, 215, 255), Ambient = "FrostMote", Burst = "IceShard",
 		Colors = { Color3.fromRGB(240, 250, 255), Color3.fromRGB(140, 190, 255) }, Rise = -0.4 },
+	Nebula = { Light = Color3.fromRGB(255, 140, 225), Ambient = "Sparkle", Burst = "Glint",
+		Colors = { Color3.fromRGB(255, 160, 230), Color3.fromRGB(95, 227, 255) }, Rise = 0.2 },
+	Solar = { Light = Color3.fromRGB(255, 200, 80), Ambient = "Ember", Burst = "Ember",
+		Colors = { Color3.fromRGB(255, 245, 180), Color3.fromRGB(255, 120, 30) }, Rise = 1.8 },
+	Astral = { Light = Color3.fromRGB(180, 165, 255), Ambient = "Glint", Burst = "Sparkle",
+		Colors = { Color3.fromRGB(255, 246, 214), Color3.fromRGB(156, 140, 255) }, Rise = 0.1 },
 }
 
 ----------------------------------------------------------------------
@@ -571,6 +577,14 @@ local function addGlow(handle, model: Model, info, lightAt: Instance?)
 		highlight.OutlineTransparency = 1
 		highlight.Parent = model
 		pulse(handle, highlight, { FillTransparency = 0.66 })
+		if detail >= 7 then
+			-- Secret: the glow slowly cycles through every colour.
+			local t = 0
+			table.insert(handle.connections, RunService.Heartbeat:Connect(function(dt)
+				t += dt
+				highlight.FillColor = Color3.fromHSV((t * 0.08) % 1, 0.35, 1)
+			end))
+		end
 	end
 	if lightAt and (detail >= 3 or glow) then
 		local _, size = model:GetBoundingBox()

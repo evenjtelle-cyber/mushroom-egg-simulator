@@ -169,6 +169,146 @@ return {
 			Sockets = { "Head", "Mouth", "Back", "Chest", "Feet" },
 			Theme = "Obsidian",
 		},
+		AstralEgg = {
+			Attributes = {
+				DropAreas = "7",
+				EggName = "Astral Egg",
+				Family = "Astral",
+				HatchSeconds = 720,
+				Rarity = "Divine",
+				SellPrice = 10000000000000.0,
+				Theme = "Astral",
+			},
+			DisplayName = "Astral Egg",
+			Family = "Astral",
+			Idle = "Rock",
+			Kind = "Egg",
+			Parts = {
+				AstralEgg_AstralGlass = {
+					Color = "#9C8CFF",
+					Look = "Glass",
+				},
+				AstralEgg_Gold = {
+					Color = "#F3C64A",
+					Look = "Plastic",
+				},
+				AstralEgg_Indigo = {
+					Color = "#2A2370",
+					Look = "Plastic",
+				},
+				AstralEgg_Midnight = {
+					Color = "#120E2E",
+					Look = "Plastic",
+				},
+				AstralEgg_MoonGlow = {
+					Color = "#FFF1B8",
+					Look = "Neon",
+				},
+				AstralEgg_RingGlass = {
+					Color = "#B9A8FF",
+					Look = "Glass",
+				},
+				AstralEgg_RingGlass2 = {
+					Color = "#7FEAFF",
+					Look = "Glass",
+				},
+				AstralEgg_StarGlass = {
+					Color = "#E9E6FF",
+					Look = "Glass",
+				},
+				AstralEgg_StarGlow = {
+					Color = "#FFF6D6",
+					Look = "Neon",
+				},
+				AstralEgg_Violet = {
+					Color = "#4B3AA0",
+					Look = "Plastic",
+				},
+			},
+			Rarity = "Divine",
+			Root = "AstralEgg_Midnight",
+			Sockets = { "EggCenter", "Ground", "Crown", "Feet" },
+			Theme = "Astral",
+		},
+		AstralMoth = {
+			Attributes = {
+				CashPerSecond = 60000000000.0,
+				Family = "Astral",
+				HatchChance = 0.65,
+				LuckMultiplier = 20.0,
+				MonsterName = "Astral Moth",
+				Rarity = "Mythic",
+				SourceEgg = "Astral Egg",
+				StrengthMultiplier = 160.0,
+				Theme = "Astral",
+			},
+			DisplayName = "Astral Moth",
+			Family = "Astral",
+			Idle = "Hover",
+			Kind = "Monster",
+			Parts = {
+				AstralMoth_Antenna = {
+					Color = "#120E2E",
+					Look = "Plastic",
+				},
+				AstralMoth_AstralGlass = {
+					Color = "#9C8CFF",
+					Look = "Glass",
+				},
+				AstralMoth_Body = {
+					Color = "#2A2370",
+					Look = "Plastic",
+				},
+				AstralMoth_Cheeks = {
+					Color = "#FF8FA3",
+					Look = "Smooth",
+				},
+				AstralMoth_Eyes = {
+					Color = "#FFFFFF",
+					Look = "Smooth",
+				},
+				AstralMoth_Fuzz = {
+					Color = "#E9E6FF",
+					Look = "Plastic",
+				},
+				AstralMoth_Iris = {
+					Color = "#2A2370",
+					Look = "Smooth",
+				},
+				AstralMoth_MoonGlow = {
+					Color = "#FFF1B8",
+					Look = "Neon",
+				},
+				AstralMoth_Pupils = {
+					Color = "#1B1B1B",
+					Look = "Smooth",
+				},
+				AstralMoth_StarGlass = {
+					Color = "#E9E6FF",
+					Look = "Glass",
+				},
+				AstralMoth_StarGlow = {
+					Color = "#FFF6D6",
+					Look = "Neon",
+				},
+				AstralMoth_WingGlass = {
+					Color = "#9C8CFF",
+					Look = "Glass",
+				},
+				AstralMoth_WingGlass2 = {
+					Color = "#7FEAFF",
+					Look = "Glass",
+				},
+				AstralMoth_WingVein = {
+					Color = "#4B3AA0",
+					Look = "Plastic",
+				},
+			},
+			Rarity = "Mythic",
+			Root = "AstralMoth_WingVein",
+			Sockets = { "Head", "Mouth", "Back", "Feet", "Chest" },
+			Theme = "Astral",
+		},
 		BarkhornStag = {
 			Attributes = {
 				CashPerSecond = 14,
@@ -350,6 +490,255 @@ return {
 			Sockets = { "Head", "Mouth", "Back", "Feet", "Chest" },
 			Theme = "Lava",
 		},
+		CometFox = {
+			Attributes = {
+				CashPerSecond = 800000000.0,
+				Family = "Nebula",
+				HatchChance = 0.3,
+				LuckMultiplier = 8.5,
+				MonsterName = "Comet Fox",
+				Rarity = "Legendary",
+				SourceEgg = "Nebula Egg",
+				StrengthMultiplier = 62.0,
+				Theme = "Nebula",
+			},
+			DisplayName = "Comet Fox",
+			Family = "Nebula",
+			Idle = "Hop",
+			Kind = "Monster",
+			Parts = {
+				CometFox_Belly = {
+					Color = "#EEF5FF",
+					Look = "Plastic",
+				},
+				CometFox_CometGlass = {
+					Color = "#7FEAFF",
+					Look = "Glass",
+				},
+				CometFox_CometGlass2 = {
+					Color = "#FF8FE0",
+					Look = "Glass",
+				},
+				CometFox_CometGlow = {
+					Color = "#BFF6FF",
+					Look = "Neon",
+				},
+				CometFox_EarInner = {
+					Color = "#FF7AC8",
+					Look = "Plastic",
+				},
+				CometFox_Eyes = {
+					Color = "#FFFFFF",
+					Look = "Smooth",
+				},
+				CometFox_Fur = {
+					Color = "#2E2A7A",
+					Look = "Plastic",
+				},
+				CometFox_FurDark = {
+					Color = "#1B1446",
+					Look = "Plastic",
+				},
+				CometFox_Iris = {
+					Color = "#5FE3FF",
+					Look = "Smooth",
+				},
+				CometFox_Mouth = {
+					Color = "#2A1A12",
+					Look = "Smooth",
+				},
+				CometFox_Nose = {
+					Color = "#1B1446",
+					Look = "Plastic",
+				},
+				CometFox_Pupils = {
+					Color = "#1B1B1B",
+					Look = "Smooth",
+				},
+				CometFox_StarGlow = {
+					Color = "#FFF6D6",
+					Look = "Neon",
+				},
+			},
+			Rarity = "Legendary",
+			Root = "CometFox_Fur",
+			Sockets = { "Head", "Mouth", "Back", "Feet", "Chest" },
+			Theme = "Nebula",
+		},
+		CoronaLion = {
+			Attributes = {
+				CashPerSecond = 10000000000.0,
+				Family = "Solar",
+				HatchChance = 0.3,
+				LuckMultiplier = 15.0,
+				MonsterName = "Corona Lion",
+				Rarity = "Mythic",
+				SourceEgg = "Solar Egg",
+				StrengthMultiplier = 115.0,
+				Theme = "Solar",
+			},
+			DisplayName = "Corona Lion",
+			Family = "Solar",
+			Idle = "Breathe",
+			Kind = "Monster",
+			Parts = {
+				CoronaLion_Belly = {
+					Color = "#FFF0C8",
+					Look = "Plastic",
+				},
+				CoronaLion_CoronaGlass = {
+					Color = "#FF9A2A",
+					Look = "Glass",
+				},
+				CoronaLion_CoronaGlow = {
+					Color = "#FFE45A",
+					Look = "Neon",
+				},
+				CoronaLion_Eyes = {
+					Color = "#FFFFFF",
+					Look = "Smooth",
+				},
+				CoronaLion_Fur = {
+					Color = "#F3B04A",
+					Look = "Plastic",
+				},
+				CoronaLion_FurLight = {
+					Color = "#FFD27A",
+					Look = "Plastic",
+				},
+				CoronaLion_Iris = {
+					Color = "#B8460F",
+					Look = "Smooth",
+				},
+				CoronaLion_Mane = {
+					Color = "#E8452C",
+					Look = "Plastic",
+				},
+				CoronaLion_ManeDark = {
+					Color = "#A8301C",
+					Look = "Plastic",
+				},
+				CoronaLion_ManeLight = {
+					Color = "#FF8A1F",
+					Look = "Plastic",
+				},
+				CoronaLion_Mouth = {
+					Color = "#2A1A12",
+					Look = "Smooth",
+				},
+				CoronaLion_Nose = {
+					Color = "#5A2A12",
+					Look = "Plastic",
+				},
+				CoronaLion_Paw = {
+					Color = "#B8732A",
+					Look = "Plastic",
+				},
+				CoronaLion_Pupils = {
+					Color = "#1B1B1B",
+					Look = "Smooth",
+				},
+				CoronaLion_SunGlow = {
+					Color = "#FFF3B0",
+					Look = "Neon",
+				},
+			},
+			Rarity = "Mythic",
+			Root = "CoronaLion_Fur",
+			Sockets = { "Head", "Mouth", "Back", "Feet", "Chest" },
+			Theme = "Solar",
+		},
+		CosmosDragon = {
+			Attributes = {
+				CashPerSecond = 450000000000.0,
+				Family = "Astral",
+				HatchChance = 0.0499,
+				LuckMultiplier = 34.0,
+				MonsterName = "Cosmos Dragon",
+				Rarity = "Divine",
+				SourceEgg = "Astral Egg",
+				StrengthMultiplier = 280.0,
+				Theme = "Astral",
+			},
+			DisplayName = "Cosmos Dragon",
+			Family = "Astral",
+			Idle = "Breathe",
+			Kind = "Monster",
+			Parts = {
+				CosmosDragon_Belly = {
+					Color = "#B9A8FF",
+					Look = "Plastic",
+				},
+				CosmosDragon_Cheeks = {
+					Color = "#FF8FE0",
+					Look = "Smooth",
+				},
+				CosmosDragon_Eyes = {
+					Color = "#FFFFFF",
+					Look = "Smooth",
+				},
+				CosmosDragon_GalaxyGlow = {
+					Color = "#B98CFF",
+					Look = "Neon",
+				},
+				CosmosDragon_Horn = {
+					Color = "#F3C64A",
+					Look = "Plastic",
+				},
+				CosmosDragon_Iris = {
+					Color = "#7FEAFF",
+					Look = "Smooth",
+				},
+				CosmosDragon_Mouth = {
+					Color = "#2A1A12",
+					Look = "Smooth",
+				},
+				CosmosDragon_NebulaGlass = {
+					Color = "#FF8FE0",
+					Look = "Glass",
+				},
+				CosmosDragon_Planet = {
+					Color = "#5FE3FF",
+					Look = "Plastic",
+				},
+				CosmosDragon_Pupils = {
+					Color = "#1B1B1B",
+					Look = "Smooth",
+				},
+				CosmosDragon_RingGlass = {
+					Color = "#FFE1B0",
+					Look = "Glass",
+				},
+				CosmosDragon_Scale = {
+					Color = "#2A2370",
+					Look = "Plastic",
+				},
+				CosmosDragon_ScaleDark = {
+					Color = "#120E2E",
+					Look = "Plastic",
+				},
+				CosmosDragon_ScaleLight = {
+					Color = "#4B3AA0",
+					Look = "Plastic",
+				},
+				CosmosDragon_StarGlass = {
+					Color = "#E9E6FF",
+					Look = "Glass",
+				},
+				CosmosDragon_StarGlow = {
+					Color = "#FFF6D6",
+					Look = "Neon",
+				},
+				CosmosDragon_WingGlass = {
+					Color = "#6B4FD8",
+					Look = "Glass",
+				},
+			},
+			Rarity = "Divine",
+			Root = "CosmosDragon_ScaleDark",
+			Sockets = { "Head", "Mouth", "Back", "Feet", "Chest" },
+			Theme = "Astral",
+		},
 		CrystalEgg = {
 			Attributes = {
 				DropAreas = "2-4",
@@ -457,6 +846,89 @@ return {
 			Root = "DruzyLynx_Fur",
 			Sockets = { "Head", "Mouth", "Back", "Feet", "Chest" },
 			Theme = "Geode",
+		},
+		EclipsePanther = {
+			Attributes = {
+				CashPerSecond = 160000000000.0,
+				Family = "Astral",
+				HatchChance = 0.3,
+				LuckMultiplier = 26.0,
+				MonsterName = "Eclipse Panther",
+				Rarity = "Divine",
+				SourceEgg = "Astral Egg",
+				StrengthMultiplier = 210.0,
+				Theme = "Astral",
+			},
+			DisplayName = "Eclipse Panther",
+			Family = "Astral",
+			Idle = "Breathe",
+			Kind = "Monster",
+			Parts = {
+				EclipsePanther_AstralGlass = {
+					Color = "#9C8CFF",
+					Look = "Glass",
+				},
+				EclipsePanther_CoronaGlass = {
+					Color = "#F3C64A",
+					Look = "Glass",
+				},
+				EclipsePanther_CoronaGlow = {
+					Color = "#FFE7A0",
+					Look = "Neon",
+				},
+				EclipsePanther_Eclipse = {
+					Color = "#05050A",
+					Look = "Plastic",
+				},
+				EclipsePanther_Eyes = {
+					Color = "#FFFFFF",
+					Look = "Smooth",
+				},
+				EclipsePanther_Fur = {
+					Color = "#16122E",
+					Look = "Plastic",
+				},
+				EclipsePanther_FurDark = {
+					Color = "#0A0A14",
+					Look = "Plastic",
+				},
+				EclipsePanther_FurLight = {
+					Color = "#2A2370",
+					Look = "Plastic",
+				},
+				EclipsePanther_Iris = {
+					Color = "#F3C64A",
+					Look = "Smooth",
+				},
+				EclipsePanther_MoonGlow = {
+					Color = "#FFF1B8",
+					Look = "Neon",
+				},
+				EclipsePanther_Mouth = {
+					Color = "#2A1A12",
+					Look = "Smooth",
+				},
+				EclipsePanther_Nose = {
+					Color = "#4B3AA0",
+					Look = "Plastic",
+				},
+				EclipsePanther_Pupils = {
+					Color = "#1B1B1B",
+					Look = "Smooth",
+				},
+				EclipsePanther_StarGlass = {
+					Color = "#E9E6FF",
+					Look = "Glass",
+				},
+				EclipsePanther_StarGlow = {
+					Color = "#FFF6D6",
+					Look = "Neon",
+				},
+			},
+			Rarity = "Divine",
+			Root = "EclipsePanther_Fur",
+			Sockets = { "Head", "Mouth", "Back", "Feet", "Chest" },
+			Theme = "Astral",
 		},
 		ElderfernTreant = {
 			Attributes = {
@@ -738,6 +1210,93 @@ return {
 			Root = "FrostrootWyrmling_Scale",
 			Sockets = { "Head", "Mouth", "Back", "Feet", "Chest" },
 			Theme = "Celestial",
+		},
+		GalaxySerpent = {
+			Attributes = {
+				CashPerSecond = 6000000000.0,
+				Family = "Nebula",
+				HatchChance = 0.01,
+				LuckMultiplier = 14.0,
+				MonsterName = "Galaxy Serpent",
+				Rarity = "Divine",
+				SourceEgg = "Nebula Egg",
+				StrengthMultiplier = 105.0,
+				Theme = "Nebula",
+			},
+			DisplayName = "Galaxy Serpent",
+			Family = "Nebula",
+			Idle = "Breathe",
+			Kind = "Monster",
+			Parts = {
+				GalaxySerpent_Belly = {
+					Color = "#8E3FB8",
+					Look = "Plastic",
+				},
+				GalaxySerpent_Body = {
+					Color = "#1B1446",
+					Look = "Plastic",
+				},
+				GalaxySerpent_BodyLight = {
+					Color = "#2E2A7A",
+					Look = "Plastic",
+				},
+				GalaxySerpent_Eyes = {
+					Color = "#FFFFFF",
+					Look = "Smooth",
+				},
+				GalaxySerpent_FinGlass = {
+					Color = "#C04CD8",
+					Look = "Glass",
+				},
+				GalaxySerpent_GalaxyGlow = {
+					Color = "#FF7AC8",
+					Look = "Neon",
+				},
+				GalaxySerpent_Horn = {
+					Color = "#F3C64A",
+					Look = "Plastic",
+				},
+				GalaxySerpent_Iris = {
+					Color = "#FF8FE0",
+					Look = "Smooth",
+				},
+				GalaxySerpent_NebulaGlass = {
+					Color = "#FF8FE0",
+					Look = "Glass",
+				},
+				GalaxySerpent_Nose = {
+					Color = "#0E0A24",
+					Look = "Plastic",
+				},
+				GalaxySerpent_Planet = {
+					Color = "#FF9F5A",
+					Look = "Plastic",
+				},
+				GalaxySerpent_Planet2 = {
+					Color = "#5FE3FF",
+					Look = "Plastic",
+				},
+				GalaxySerpent_Pupils = {
+					Color = "#1B1B1B",
+					Look = "Smooth",
+				},
+				GalaxySerpent_RingGlass = {
+					Color = "#FFE1B0",
+					Look = "Glass",
+				},
+				GalaxySerpent_StarGlass = {
+					Color = "#7FEAFF",
+					Look = "Glass",
+				},
+				GalaxySerpent_StarGlow = {
+					Color = "#FFF6D6",
+					Look = "Neon",
+				},
+			},
+			Rarity = "Divine",
+			Root = "GalaxySerpent_Body",
+			Sockets = { "Head", "Mouth", "Back", "Feet", "Chest" },
+			Theme = "Nebula",
 		},
 		GemhornRhino = {
 			Attributes = {
@@ -1048,6 +1607,156 @@ return {
 			Sockets = { "Head", "Mouth", "Back", "Feet", "Chest" },
 			Theme = "Void",
 		},
+		HeliosColossus = {
+			Attributes = {
+				CashPerSecond = 80000000000.0,
+				Family = "Solar",
+				HatchChance = 0.01,
+				LuckMultiplier = 25.0,
+				MonsterName = "Helios Colossus",
+				Rarity = "Divine",
+				SourceEgg = "Solar Egg",
+				StrengthMultiplier = 190.0,
+				Theme = "Solar",
+			},
+			DisplayName = "Helios Colossus",
+			Family = "Solar",
+			Idle = "Breathe",
+			Kind = "Monster",
+			Parts = {
+				HeliosColossus_Bronze = {
+					Color = "#B8732A",
+					Look = "Plastic",
+				},
+				HeliosColossus_BronzeLight = {
+					Color = "#D99A4A",
+					Look = "Plastic",
+				},
+				HeliosColossus_CoreGlow = {
+					Color = "#FFF3B0",
+					Look = "Neon",
+				},
+				HeliosColossus_EyeGlow = {
+					Color = "#FFF3B0",
+					Look = "Neon",
+				},
+				HeliosColossus_Gold = {
+					Color = "#FFC93C",
+					Look = "Plastic",
+				},
+				HeliosColossus_HaloGlow = {
+					Color = "#FFD84A",
+					Look = "Neon",
+				},
+				HeliosColossus_SunGlass = {
+					Color = "#FFB020",
+					Look = "Glass",
+				},
+				HeliosColossus_SunGlow = {
+					Color = "#FFE45A",
+					Look = "Neon",
+				},
+			},
+			Rarity = "Divine",
+			Root = "HeliosColossus_Gold",
+			Sockets = { "Head", "Mouth", "Back", "Chest", "Feet" },
+			Theme = "Solar",
+		},
+		InfinityWyrm = {
+			Attributes = {
+				CashPerSecond = 2500000000000.0,
+				Family = "Astral",
+				HatchChance = 0.0001,
+				LuckMultiplier = 60.0,
+				MonsterName = "Infinity Wyrm",
+				Rarity = "Secret",
+				SourceEgg = "Astral Egg",
+				StrengthMultiplier = 500.0,
+				Theme = "Astral",
+			},
+			DisplayName = "Infinity Wyrm",
+			Family = "Astral",
+			Idle = "Hover",
+			Kind = "Monster",
+			Parts = {
+				InfinityWyrm_Belly = {
+					Color = "#FFE7A8",
+					Look = "Plastic",
+				},
+				InfinityWyrm_Cheeks = {
+					Color = "#FF8FA3",
+					Look = "Smooth",
+				},
+				InfinityWyrm_CrystalGlass = {
+					Color = "#9CFFFF",
+					Look = "Glass",
+				},
+				InfinityWyrm_Eyes = {
+					Color = "#FFFFFF",
+					Look = "Smooth",
+				},
+				InfinityWyrm_FinGlass = {
+					Color = "#B9A8FF",
+					Look = "Glass",
+				},
+				InfinityWyrm_Gold = {
+					Color = "#F3C64A",
+					Look = "Plastic",
+				},
+				InfinityWyrm_HaloGlow = {
+					Color = "#FFE45A",
+					Look = "Neon",
+				},
+				InfinityWyrm_Iris = {
+					Color = "#6B4FD8",
+					Look = "Smooth",
+				},
+				InfinityWyrm_Mane = {
+					Color = "#FFFFFF",
+					Look = "Plastic",
+				},
+				InfinityWyrm_ManeLight = {
+					Color = "#FFE7A8",
+					Look = "Plastic",
+				},
+				InfinityWyrm_Nose = {
+					Color = "#6B4FD8",
+					Look = "Plastic",
+				},
+				InfinityWyrm_Pupils = {
+					Color = "#1B1B1B",
+					Look = "Smooth",
+				},
+				InfinityWyrm_RuneGlow = {
+					Color = "#FFD84A",
+					Look = "Neon",
+				},
+				InfinityWyrm_Scale = {
+					Color = "#EEF0FF",
+					Look = "Plastic",
+				},
+				InfinityWyrm_ScaleLight = {
+					Color = "#AEB9FF",
+					Look = "Plastic",
+				},
+				InfinityWyrm_StarGlow = {
+					Color = "#FFF6D6",
+					Look = "Neon",
+				},
+				InfinityWyrm_VioletGlass = {
+					Color = "#C9A0FF",
+					Look = "Glass",
+				},
+				InfinityWyrm_WingGlass = {
+					Color = "#9CFFFF",
+					Look = "Glass",
+				},
+			},
+			Rarity = "Secret",
+			Root = "InfinityWyrm_Scale",
+			Sockets = { "Head", "Mouth", "Back", "Feet", "Chest" },
+			Theme = "Astral",
+		},
 		LavaEgg = {
 			Attributes = {
 				DropAreas = "3-5",
@@ -1241,6 +1950,122 @@ return {
 			Root = "MoltenBehemoth_Obsidian",
 			Sockets = { "Head", "Mouth", "Back", "Feet", "Chest" },
 			Theme = "Obsidian",
+		},
+		NebulaEgg = {
+			Attributes = {
+				DropAreas = "6",
+				EggName = "Nebula Egg",
+				Family = "Nebula",
+				HatchSeconds = 480,
+				Rarity = "Mythic",
+				SellPrice = 80000000000.0,
+				Theme = "Nebula",
+			},
+			DisplayName = "Nebula Egg",
+			Family = "Nebula",
+			Idle = "Rock",
+			Kind = "Egg",
+			Parts = {
+				NebulaEgg_Nebula = {
+					Color = "#2E2A7A",
+					Look = "Plastic",
+				},
+				NebulaEgg_NebulaGlass = {
+					Color = "#FF8FE0",
+					Look = "Glass",
+				},
+				NebulaEgg_NebulaPink = {
+					Color = "#8E3FB8",
+					Look = "Plastic",
+				},
+				NebulaEgg_Space = {
+					Color = "#1B1446",
+					Look = "Plastic",
+				},
+				NebulaEgg_StarGlass = {
+					Color = "#7FEAFF",
+					Look = "Glass",
+				},
+				NebulaEgg_StarGlow = {
+					Color = "#FFF6D6",
+					Look = "Neon",
+				},
+			},
+			Rarity = "Mythic",
+			Root = "NebulaEgg_Space",
+			Sockets = { "EggCenter", "Ground", "Crown", "Feet" },
+			Theme = "Nebula",
+		},
+		NebulaJellyfish = {
+			Attributes = {
+				CashPerSecond = 300000000.0,
+				Family = "Nebula",
+				HatchChance = 0.6,
+				LuckMultiplier = 7.0,
+				MonsterName = "Nebula Jellyfish",
+				Rarity = "Epic",
+				SourceEgg = "Nebula Egg",
+				StrengthMultiplier = 50.0,
+				Theme = "Nebula",
+			},
+			DisplayName = "Nebula Jellyfish",
+			Family = "Nebula",
+			Idle = "Hover",
+			Kind = "Monster",
+			Parts = {
+				NebulaJellyfish_BellGlass = {
+					Color = "#FF8FE0",
+					Look = "Glass",
+				},
+				NebulaJellyfish_Cheeks = {
+					Color = "#FF8FA3",
+					Look = "Smooth",
+				},
+				NebulaJellyfish_CoreGlow = {
+					Color = "#FFE1F6",
+					Look = "Neon",
+				},
+				NebulaJellyfish_Eyes = {
+					Color = "#FFFFFF",
+					Look = "Smooth",
+				},
+				NebulaJellyfish_Frill = {
+					Color = "#FF7AC8",
+					Look = "Plastic",
+				},
+				NebulaJellyfish_Mouth = {
+					Color = "#2A1A12",
+					Look = "Smooth",
+				},
+				NebulaJellyfish_Pupils = {
+					Color = "#1B1B1B",
+					Look = "Smooth",
+				},
+				NebulaJellyfish_Rim = {
+					Color = "#8E3FB8",
+					Look = "Plastic",
+				},
+				NebulaJellyfish_RimLight = {
+					Color = "#C04CD8",
+					Look = "Plastic",
+				},
+				NebulaJellyfish_StarGlow = {
+					Color = "#FFF6D6",
+					Look = "Neon",
+				},
+				NebulaJellyfish_Tentacle = {
+					Color = "#C04CD8",
+					Look = "Plastic",
+				},
+				NebulaJellyfish_TentacleGlow = {
+					Color = "#5FE3FF",
+					Look = "Neon",
+				},
+			},
+			Rarity = "Epic",
+			Root = "NebulaJellyfish_Tentacle",
+			Sockets = { "Head", "Mouth", "Back", "Feet", "Chest" },
+			Theme = "Nebula",
 		},
 		NullhornBeast = {
 			Attributes = {
@@ -1786,6 +2611,130 @@ return {
 			Sockets = { "Head", "Mouth", "Back", "Feet", "Chest" },
 			Theme = "Obsidian",
 		},
+		SolarEgg = {
+			Attributes = {
+				DropAreas = "6-7",
+				EggName = "Solar Egg",
+				Family = "Solar",
+				HatchSeconds = 600,
+				Rarity = "Divine",
+				SellPrice = 900000000000.0,
+				Theme = "Solar",
+			},
+			DisplayName = "Solar Egg",
+			Family = "Solar",
+			Idle = "Rock",
+			Kind = "Egg",
+			Parts = {
+				SolarEgg_Band = {
+					Color = "#7A2E10",
+					Look = "Plastic",
+				},
+				SolarEgg_FlareGlass = {
+					Color = "#FF7A1A",
+					Look = "Glass",
+				},
+				SolarEgg_FlareGlow = {
+					Color = "#FFD84A",
+					Look = "Neon",
+				},
+				SolarEgg_Sun = {
+					Color = "#FF8A1F",
+					Look = "Plastic",
+				},
+				SolarEgg_SunDeep = {
+					Color = "#E8452C",
+					Look = "Plastic",
+				},
+				SolarEgg_SunGlow = {
+					Color = "#FFF3B0",
+					Look = "Neon",
+				},
+				SolarEgg_SunLight = {
+					Color = "#FFC93C",
+					Look = "Plastic",
+				},
+			},
+			Rarity = "Divine",
+			Root = "SolarEgg_Sun",
+			Sockets = { "EggCenter", "Ground", "Crown", "Feet" },
+			Theme = "Solar",
+		},
+		SolarflarePhoenix = {
+			Attributes = {
+				CashPerSecond = 28000000000.0,
+				Family = "Solar",
+				HatchChance = 0.09,
+				LuckMultiplier = 19.0,
+				MonsterName = "Solarflare Phoenix",
+				Rarity = "Divine",
+				SourceEgg = "Solar Egg",
+				StrengthMultiplier = 145.0,
+				Theme = "Solar",
+			},
+			DisplayName = "Solarflare Phoenix",
+			Family = "Solar",
+			Idle = "Hover",
+			Kind = "Monster",
+			Parts = {
+				SolarflarePhoenix_Beak = {
+					Color = "#FFE27A",
+					Look = "Plastic",
+				},
+				SolarflarePhoenix_Belly = {
+					Color = "#FFE7A8",
+					Look = "Plastic",
+				},
+				SolarflarePhoenix_Cheeks = {
+					Color = "#FF8FA3",
+					Look = "Smooth",
+				},
+				SolarflarePhoenix_Eyes = {
+					Color = "#FFFFFF",
+					Look = "Smooth",
+				},
+				SolarflarePhoenix_Flame = {
+					Color = "#FF7A1A",
+					Look = "Plastic",
+				},
+				SolarflarePhoenix_FlameGlass = {
+					Color = "#FF5A1F",
+					Look = "Glass",
+				},
+				SolarflarePhoenix_FlameGlow = {
+					Color = "#FFE45A",
+					Look = "Neon",
+				},
+				SolarflarePhoenix_FlameGold = {
+					Color = "#FFC93C",
+					Look = "Plastic",
+				},
+				SolarflarePhoenix_FlameRed = {
+					Color = "#E8452C",
+					Look = "Plastic",
+				},
+				SolarflarePhoenix_Iris = {
+					Color = "#7A2E10",
+					Look = "Smooth",
+				},
+				SolarflarePhoenix_Pupils = {
+					Color = "#1B1B1B",
+					Look = "Smooth",
+				},
+				SolarflarePhoenix_SunGlow = {
+					Color = "#FFF3B0",
+					Look = "Neon",
+				},
+				SolarflarePhoenix_Talon = {
+					Color = "#7A2E10",
+					Look = "Plastic",
+				},
+			},
+			Rarity = "Divine",
+			Root = "SolarflarePhoenix_FlameRed",
+			Sockets = { "Head", "Mouth", "Back", "Feet", "Chest" },
+			Theme = "Solar",
+		},
 		SporecloakFox = {
 			Attributes = {
 				CashPerSecond = 120,
@@ -1974,6 +2923,156 @@ return {
 			Root = "StarfrostOwl_FeatherDark",
 			Sockets = { "Head", "Mouth", "Back", "Feet", "Chest" },
 			Theme = "Celestial",
+		},
+		StarlightPegasus = {
+			Attributes = {
+				CashPerSecond = 2000000000.0,
+				Family = "Nebula",
+				HatchChance = 0.09,
+				LuckMultiplier = 10.5,
+				MonsterName = "Starlight Pegasus",
+				Rarity = "Mythic",
+				SourceEgg = "Nebula Egg",
+				StrengthMultiplier = 80.0,
+				Theme = "Nebula",
+			},
+			DisplayName = "Starlight Pegasus",
+			Family = "Nebula",
+			Idle = "Breathe",
+			Kind = "Monster",
+			Parts = {
+				StarlightPegasus_Coat = {
+					Color = "#EEF5FF",
+					Look = "Plastic",
+				},
+				StarlightPegasus_CoatLight = {
+					Color = "#CFE6FF",
+					Look = "Plastic",
+				},
+				StarlightPegasus_Eyes = {
+					Color = "#FFFFFF",
+					Look = "Smooth",
+				},
+				StarlightPegasus_Hoof = {
+					Color = "#F3C64A",
+					Look = "Plastic",
+				},
+				StarlightPegasus_Iris = {
+					Color = "#6B4FD8",
+					Look = "Smooth",
+				},
+				StarlightPegasus_ManeGlass = {
+					Color = "#FF8FE0",
+					Look = "Glass",
+				},
+				StarlightPegasus_ManeGlass2 = {
+					Color = "#7FEAFF",
+					Look = "Glass",
+				},
+				StarlightPegasus_Mouth = {
+					Color = "#2A1A12",
+					Look = "Smooth",
+				},
+				StarlightPegasus_Nose = {
+					Color = "#8E7FB8",
+					Look = "Plastic",
+				},
+				StarlightPegasus_Pupils = {
+					Color = "#1B1B1B",
+					Look = "Smooth",
+				},
+				StarlightPegasus_StarGlow = {
+					Color = "#FFE27A",
+					Look = "Neon",
+				},
+				StarlightPegasus_Wing = {
+					Color = "#EEF5FF",
+					Look = "Plastic",
+				},
+				StarlightPegasus_WingLight = {
+					Color = "#FFFFFF",
+					Look = "Plastic",
+				},
+				StarlightPegasus_WingTip = {
+					Color = "#B9D8FF",
+					Look = "Plastic",
+				},
+			},
+			Rarity = "Mythic",
+			Root = "StarlightPegasus_WingTip",
+			Sockets = { "Head", "Mouth", "Back", "Feet", "Chest" },
+			Theme = "Nebula",
+		},
+		SunflareSalamander = {
+			Attributes = {
+				CashPerSecond = 4000000000.0,
+				Family = "Solar",
+				HatchChance = 0.6,
+				LuckMultiplier = 12.0,
+				MonsterName = "Sunflare Salamander",
+				Rarity = "Legendary",
+				SourceEgg = "Solar Egg",
+				StrengthMultiplier = 90.0,
+				Theme = "Solar",
+			},
+			DisplayName = "Sunflare Salamander",
+			Family = "Solar",
+			Idle = "Hop",
+			Kind = "Monster",
+			Parts = {
+				SunflareSalamander_Belly = {
+					Color = "#FFE7A8",
+					Look = "Plastic",
+				},
+				SunflareSalamander_Cheeks = {
+					Color = "#FF8FA3",
+					Look = "Smooth",
+				},
+				SunflareSalamander_Eyes = {
+					Color = "#FFFFFF",
+					Look = "Smooth",
+				},
+				SunflareSalamander_FlameGlass = {
+					Color = "#FF5A1F",
+					Look = "Glass",
+				},
+				SunflareSalamander_FlameGlow = {
+					Color = "#FFD84A",
+					Look = "Neon",
+				},
+				SunflareSalamander_Gill = {
+					Color = "#E8452C",
+					Look = "Plastic",
+				},
+				SunflareSalamander_Iris = {
+					Color = "#7A2E10",
+					Look = "Smooth",
+				},
+				SunflareSalamander_Mouth = {
+					Color = "#2A1A12",
+					Look = "Smooth",
+				},
+				SunflareSalamander_Pupils = {
+					Color = "#1B1B1B",
+					Look = "Smooth",
+				},
+				SunflareSalamander_Skin = {
+					Color = "#FF8A1F",
+					Look = "Plastic",
+				},
+				SunflareSalamander_SkinLight = {
+					Color = "#FFB347",
+					Look = "Plastic",
+				},
+				SunflareSalamander_SunGlow = {
+					Color = "#FFF3B0",
+					Look = "Neon",
+				},
+			},
+			Rarity = "Legendary",
+			Root = "SunflareSalamander_Skin",
+			Sockets = { "Head", "Mouth", "Back", "Feet", "Chest" },
+			Theme = "Solar",
 		},
 		ThornbackHedgehog = {
 			Attributes = {

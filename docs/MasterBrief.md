@@ -96,7 +96,7 @@ Every mushroom has health and visibly shrinks as it's chopped:
 ## 3. Shops, leaderboards & auras (gameplay)
 - **UI Shop (red basket):** Robux only (2x Cash, 2x Strength, Instant Hatch, OP Auto-Clicker, Luck Boosts).
 - **Physical map shops:**
-  1. **"Choppers":** buy axes and swords with Cash.
+  1. **"Choppers":** buy choppers with Cash or Robux. There are 10, from the free Mossbark Hatchet to the Eclipse Glaive: axes, a sickle, swords, a scythe, a halberd and a glaive (5.4d). Stats are in `ReplicatedStorage.ChopperData`.
   2. **"Upgrades":** Max Inventory Capacity, Player Luck, Weapon Hitbox Range, Movement Speed.
   3. **"Auras" shrine:** spin for permanent auras for 100k Cash, or a Robux bypass.
 - **Hub leaderboards** (3D, SurfaceGui, OrderedDataStore): Top Cash, Top Strength, Top Rebirths, Top Time Played.
@@ -274,6 +274,26 @@ The first four references are **built** and live in the repo. Open their preview
   - Egg: rocks side to side on the ground (pivoting at its base), falling leaves, sprout spores, and a "Common" label.
   - Hatch: a wobble, then shell shards, a leaf burst and dust.
 - **Studio:** `StarterSet.lua` (`Assemble`, `StartToad`, `StartEgg`, `PlayHatch`, `ResetEgg`).
+
+### 5.4d Choppers: all 10 weapons ✅ built
+- **Built by:** `GenerateChoppers.py` → `Choppers.glb` (the nine after the starter axe), `ChopperData.lua` and previews (`docs/images/Choppers_Lineup.jpg`). Same smooth, baked, hand-painted pipeline as the Mossbark Hatchet (4d).
+
+  | # | Chopper | Tier | Type | Strength/hit | Cash | Robux | Signature details |
+  |---|---|---|---|---|---|---|---|
+  | 1 | Mossbark Hatchet | Wood | Axe | +1 | Free | – | 5.4 |
+  | 2 | Stonebark Hatchet | Wood | Axe | +5 | $500 | 15 | Knapped stone head, rope lashing, bent branch with leaves |
+  | 3 | Fernleaf Sickle | Wood | Sickle | +20 | $15K | 29 | Crescent blade, fern frond along the spine |
+  | 4 | Amethyst Chopper | Crystal | Sword | +60 | $250K | 49 | Cleaver-sword, amethyst fuller, crystal spine (Glass) |
+  | 5 | Magmaseam Axe | Lava | Axe | +600 | $50M | 99 | Double-bitted basalt, magma seams and edges (Neon) |
+  | 6 | Voidglass Reaver | Void | Sword | +5,000 | $10B | 199 | Hooked void-stone blade, bone hilt, void orb, rune dots |
+  | 7 | Frostroot Cleaver | Celestial | Axe | +25,000 | $1T | 399 | Ice cleaver, twisted-root haft, fur cuff, rune circle |
+  | 8 | Stardust Scythe | Nebula | Scythe | +150,000 | $80T | 599 | Nebula gradient blade with stars, pink gems |
+  | 9 | Sunburst Halberd | Solar | Halberd | +900,000 | $5Qa | 799 | Gilded axe and spear, glowing sun disc, flame tassels |
+  | 10 | Eclipse Glaive | Astral | Glaive | +5,000,000 | $300Qa | 999 | Twin moon blades, two eclipse rings at the grip |
+
+  Rows 3, 8, 9 and 10 were added to reach 10 and their numbers are placeholders.
+- **Parts:** `Handle` and `Head` (baked texture each), plus a flat `Glow` (Neon) and/or `Crystal` (Glass) part from the Crystal tier up. Every chopper is 10k–22k triangles.
+- **Studio:** `ChopperKit.lua` (`SetupAll`, `MakeTool`, `ShopList`, `GiveTool`) and `ChopperDemo.lua`. Tools get a tier-coloured swing trail, tier sparkles (Crystal+) and a light on the Glow part (Lava+).
 
 ### 5.4c Bestiary: every other egg and monster ✅ built
 - **Built by:** `GenerateBestiary.py` → one `Family_<Egg>.glb` per egg family, `BestiaryVFXMeshes.glb` (white hatch shards) and `BestiaryData.lua`.
@@ -497,8 +517,9 @@ docs/                                     guides, this brief, preview images (do
 4. `FrostmaneVFX.lua`, `VFXLibrary.lua` and `FrostmaneDemo.lua` (click-to-hatch demo).
 5. `blender/GenerateStarterSet.py`, `StarterSet.lua` and `StarterDemo.lua`: the Wood starter set (5.4, 5.4b).
 6. `blender/GenerateBestiary.py`, `CreatureKit.lua`, `BestiaryData.lua` and `BestiaryDemo.lua`: every other egg and monster (5.4c).
-7. Docs:
-   - `docs/Guide_AddFrostmaneToRoblox.md`, `docs/Guide_StarterSet.md` and `docs/Guide_Bestiary.md` (beginner guides);
+7. `blender/GenerateChoppers.py`, `ChopperKit.lua`, `ChopperData.lua` and `ChopperDemo.lua`: the other nine choppers (5.4d).
+8. Docs:
+   - `docs/Guide_AddFrostmaneToRoblox.md`, `docs/Guide_StarterSet.md`, `docs/Guide_Bestiary.md` and `docs/Guide_Choppers.md` (beginner guides);
    - `docs/FrostmaneSet.md`;
    - `docs/PlayerAnimations.md`.
 
@@ -519,7 +540,6 @@ docs/                                     guides, this brief, preview images (do
 7. **`LeaderboardService.lua`** (server): the 3D leaderboards with OrderedDataStore.
 8. **Blender generators** for every remaining asset family, each following section 6 and reusing the Frostmane vocabulary:
    - the other tiers' VFX (all eggs and monsters are done, 5.4c);
-   - the remaining weapons (smooth style, 4d and 5.4);
    - mushrooms (5.5);
    - dummies (5.7);
    - world props;

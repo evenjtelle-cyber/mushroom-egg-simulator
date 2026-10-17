@@ -181,6 +181,11 @@ AnimationConfig.Weapon = {
 AnimationConfig.WeaponTypeOverrides = {
 	Axe = {},
 	Sword = {},
+	-- The newer choppers (GenerateChoppers.py) use the same combo until they get their own clips.
+	Sickle = {},
+	Scythe = {},
+	Halberd = {},
+	Glaive = {},
 }
 
 ----------------------------------------------------------------------

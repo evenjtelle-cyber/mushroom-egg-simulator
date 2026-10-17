@@ -92,6 +92,9 @@ StarterSet.ATTRIBUTES = {
 		Damage = 1,
 		StrengthPerClick = 1,
 		CashPrice = 0,
+		RobuxPrice = 0,
+		ShopOrder = 1, -- first of the 10 choppers (ReplicatedStorage.ChopperData)
+		Chopper = "MossbarkHatchet",
 		AttackSpeed = 1,
 	},
 }
